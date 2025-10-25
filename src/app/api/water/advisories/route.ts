@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-import { jsonError, jsonSuccess, parseQuery } from "@/lib/water/api-helpers"
+import { advisoriesToCsv, csvResponse, jsonError, jsonSuccess, parseQuery } from "@/lib/water/api-helpers"
 import { getWaterAdvisories } from "@/lib/water/iowa-datasources"
 import { waterLogger } from "@/lib/water/logger"
 import { advisoryTypeSchema } from "@/types/water"
@@ -9,6 +9,7 @@ export const revalidate = 900
 
 const querySchema = z.object({
   type: advisoryTypeSchema.optional(),
+  format: z.enum(["json", "csv"]).optional(),
 })
 
 export async function GET(request: Request) {
@@ -20,11 +21,15 @@ export async function GET(request: Request) {
   }
 
   try {
-    const advisories = await getWaterAdvisories(parsed.data.type ? { type: parsed.data.type } : undefined)
+    const { format = "json", type } = parsed.data
+    const advisories = await getWaterAdvisories(type ? { type } : undefined)
     waterLogger.info("api-advisories", "Served advisories feed", {
       count: advisories.length,
-      type: parsed.data.type ?? "all",
+      type: type ?? "all",
     })
+    if (format === "csv") {
+      return csvResponse(advisoriesToCsv(advisories), "advisories.csv")
+    }
     return jsonSuccess(advisories, {
       headers: {
         "Cache-Control": "s-maxage=900, stale-while-revalidate=600",
@@ -35,4 +40,3 @@ export async function GET(request: Request) {
     return jsonError("Unable to load advisories", 500)
   }
 }
-

@@ -11,7 +11,6 @@ import {
   Settings,
   Sparkles,
   Trash2,
-  Map,
 } from "lucide-react";
 
 import { NavMain } from "@/components/nav-main";
@@ -38,11 +37,6 @@ const navItems = [
     icon: Home,
   },
   {
-    title: "Map",
-    url: "/map",
-    icon: Map,
-  },
-  {
     title: "Data Explorer",
     url: "/explorer",
     icon: LineChart,
@@ -53,7 +47,7 @@ const navItems = [
     icon: Newspaper,
   },
   {
-    title: "About",
+    title: "Initiatives",
     url: "/initiatives",
     icon: Sparkles,
   },

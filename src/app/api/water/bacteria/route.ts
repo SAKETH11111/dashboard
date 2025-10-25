@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-import { jsonError, jsonSuccess, parseQuery } from "@/lib/water/api-helpers"
+import { csvResponse, jsonError, jsonSuccess, parseQuery, waterSeriesToCsv } from "@/lib/water/api-helpers"
 import { getIowaBacteriaSeries } from "@/lib/water/iowa-datasources"
 import { waterLogger } from "@/lib/water/logger"
 
@@ -10,6 +10,7 @@ const querySchema = z.object({
   systemId: z.string().optional(),
   type: z.enum(["ecoli"]).optional(),
   site: z.string().optional(),
+  format: z.enum(["json", "csv"]).optional(),
 })
 
 export async function GET(request: Request) {
@@ -21,15 +22,18 @@ export async function GET(request: Request) {
   }
 
   try {
-    const data = await getIowaBacteriaSeries(parsed.data)
+    const { format = "json", ...filters } = parsed.data
+    const data = await getIowaBacteriaSeries(filters)
     waterLogger.info("api-bacteria", "Served bacteria series", {
-      site: parsed.data.site ?? data.region,
+      site: filters.site ?? data.region,
       points: data.points.length,
     })
+    if (format === "csv") {
+      return csvResponse(waterSeriesToCsv(data), "bacteria.csv")
+    }
     return jsonSuccess(data)
   } catch (error) {
     waterLogger.error("api-bacteria", "Failed to load bacteria data", error)
     return jsonError("Unable to load bacteria data", 500)
   }
 }
-

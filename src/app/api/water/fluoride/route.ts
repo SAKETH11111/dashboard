@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-import { jsonError, jsonSuccess, parseQuery } from "@/lib/water/api-helpers"
+import { csvResponse, jsonError, jsonSuccess, parseQuery, waterSeriesToCsv } from "@/lib/water/api-helpers"
 import { getIowaFluorideSeries } from "@/lib/water/iowa-datasources"
 import { waterLogger } from "@/lib/water/logger"
 
@@ -8,6 +8,7 @@ export const revalidate = 3600
 
 const querySchema = z.object({
   systemId: z.string().optional(),
+  format: z.enum(["json", "csv"]).optional(),
 })
 
 export async function GET(request: Request) {
@@ -19,15 +20,18 @@ export async function GET(request: Request) {
   }
 
   try {
-    const data = await getIowaFluorideSeries(parsed.data)
+    const { format = "json", ...filters } = parsed.data
+    const data = await getIowaFluorideSeries(filters)
     waterLogger.info("api-fluoride", "Served fluoride series", {
-      systemId: parsed.data.systemId ?? data.systemId,
+      systemId: filters.systemId ?? data.systemId,
       points: data.points.length,
     })
+    if (format === "csv") {
+      return csvResponse(waterSeriesToCsv(data), "fluoride.csv")
+    }
     return jsonSuccess(data)
   } catch (error) {
     waterLogger.error("api-fluoride", "Failed to load fluoride data", error)
     return jsonError("Unable to load fluoride data", 500)
   }
 }
-

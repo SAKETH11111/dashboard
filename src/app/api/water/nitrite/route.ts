@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-import { jsonError, jsonSuccess, parseQuery } from "@/lib/water/api-helpers"
+import { csvResponse, jsonError, jsonSuccess, parseQuery, waterSeriesToCsv } from "@/lib/water/api-helpers"
 import { getIowaNitriteSeries } from "@/lib/water/iowa-datasources"
 import { waterLogger } from "@/lib/water/logger"
 
@@ -8,6 +8,7 @@ export const revalidate = 1800
 
 const querySchema = z.object({
   systemId: z.string().optional(),
+  format: z.enum(["json", "csv"]).optional(),
 })
 
 export async function GET(request: Request) {
@@ -19,15 +20,18 @@ export async function GET(request: Request) {
   }
 
   try {
-    const data = await getIowaNitriteSeries(parsed.data)
+    const { format = "json", ...filters } = parsed.data
+    const data = await getIowaNitriteSeries(filters)
     waterLogger.info("api-nitrite", "Served nitrite series", {
-      systemId: parsed.data.systemId ?? data.systemId,
+      systemId: filters.systemId ?? data.systemId,
       points: data.points.length,
     })
+    if (format === "csv") {
+      return csvResponse(waterSeriesToCsv(data), "nitrite.csv")
+    }
     return jsonSuccess(data)
   } catch (error) {
     waterLogger.error("api-nitrite", "Failed to load nitrite data", error)
     return jsonError("Unable to load nitrite data", 500)
   }
 }
-

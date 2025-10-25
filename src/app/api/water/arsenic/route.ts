@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-import { jsonError, jsonSuccess, parseQuery } from "@/lib/water/api-helpers"
+import { csvResponse, jsonError, jsonSuccess, parseQuery, waterSeriesToCsv } from "@/lib/water/api-helpers"
 import { getIowaArsenicSeries } from "@/lib/water/iowa-datasources"
 import { waterLogger } from "@/lib/water/logger"
 
@@ -9,6 +9,7 @@ export const revalidate = 3600
 const querySchema = z.object({
   systemId: z.string().optional(),
   county: z.string().optional(),
+  format: z.enum(["json", "csv"]).optional(),
 })
 
 export async function GET(request: Request) {
@@ -20,15 +21,18 @@ export async function GET(request: Request) {
   }
 
   try {
-    const data = await getIowaArsenicSeries(parsed.data)
+    const { format = "json", ...filters } = parsed.data
+    const data = await getIowaArsenicSeries(filters)
     waterLogger.info("api-arsenic", "Served arsenic series", {
-      systemId: parsed.data.systemId ?? data.systemId,
+      systemId: filters.systemId ?? data.systemId,
       points: data.points.length,
     })
+    if (format === "csv") {
+      return csvResponse(waterSeriesToCsv(data), "arsenic.csv")
+    }
     return jsonSuccess(data)
   } catch (error) {
     waterLogger.error("api-arsenic", "Failed to load arsenic data", error)
     return jsonError("Unable to load arsenic data", 500)
   }
 }
-
