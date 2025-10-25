@@ -1,0 +1,68 @@
+[
+  {
+    "id": "climate-promise-2025",
+    "title": "UNDP Climate Promise 2025",
+    "branch": "UNDP",
+    "region": "Global, 120+ countries",
+    "status": "Active",
+    "tags": ["Mitigation", "NDC", "Policy"],
+    "summary": "Helps countries align their national climate pledges with the 1.5°C goal, supporting NDC enhancement, implementation, and finance mobilization.",
+    "lastUpdated": "2025-10-01",
+    "url": "https://climatepromise.undp.org/what-we-do/flagship-initiatives/climate-promise-2025"
+  },
+  {
+    "id": "world-restoration-flagships",
+    "title": "UN Decade World Restoration Flagships",
+    "branch": "UNEP, FAO",
+    "region": "Africa, Latin America, Asia, Mediterranean",
+    "status": "Active",
+    "tags": ["Restoration", "Ecosystems", "Jobs"],
+    "summary": "UNEP/FAO-backed initiatives targeting large-scale restoration of forests, rivers, wetlands, grasslands, and coasts. Seven new flagships recognized in 2024.",
+    "lastUpdated": "2024-02-13",
+    "url": "https://www.decadeonrestoration.org/world-restoration-flagships"
+  },
+  {
+    "id": "living-indus-pakistan",
+    "title": "Living Indus – Restoring Pakistan’s Lifeline",
+    "branch": "UNEP, FAO",
+    "region": "South Asia",
+    "status": "Active",
+    "tags": ["Water", "Restoration", "Adaptation"],
+    "summary": "Aims to rejuvenate 25 million hectares along the Indus River, combating ecosystem degradation and supporting agricultural and ecological resilience.",
+    "lastUpdated": "2024-02-13",
+    "url": "https://www.decadeonrestoration.org/world-restoration-flagships/living-indus"
+  },
+  {
+    "id": "accion-andina",
+    "title": "Acción Andina: Climate and Reforestation",
+    "branch": "UNEP, ECOAN (Peru)",
+    "region": "South America",
+    "status": "Active",
+    "tags": ["Forests", "Reforestation", "Community"],
+    "summary": "Restoring and growing 30 million trees across seven countries in the Andes to boost climate and water resilience, and community development.",
+    "lastUpdated": "2024-02-13",
+    "url": "https://www.decadeonrestoration.org/world-restoration-flagships/accion-andina"
+  },
+  {
+    "id": "unfccc-article-6-programmes",
+    "title": "UNFCCC Article 6 Programmes",
+    "branch": "UNFCCC",
+    "region": "Global, 60+ countries",
+    "status": "Ongoing",
+    "tags": ["Carbon Markets", "Mitigation", "Finance"],
+    "summary": "Enables countries and organizations to cooperate using international carbon markets for emissions reductions and climate investments under Paris Agreement Article 6.",
+    "lastUpdated": "2025-09-15",
+    "url": "https://unepccc.org/article-6-pipeline/"
+  },
+  {
+    "id": "gcf-green-climate-fund-projects",
+    "title": "Green Climate Fund Flagship Projects",
+    "branch": "UNEP, GCF",
+    "region": "Africa, Asia-Pacific, LAC",
+    "status": "Active",
+    "tags": ["Finance", "Mitigation", "Adaptation"],
+    "summary": "$400M+ portfolio of adaptation, forestry, energy efficiency, and transition projects enabling low-emission development across developing countries.",
+    "lastUpdated": "2025-08-01",
+    "url": "https://www.greenclimate.fund/ae/unep"
+  }
+]
