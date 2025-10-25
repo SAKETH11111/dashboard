@@ -73,6 +73,7 @@ const cacheBuilders: WaterSeriesResponse[] = [
         issuedAt: "2024-05-18T12:00:00Z",
         source: "Iowa DNR",
         sourceUrl: "https://www.iowadnr.gov/Things-to-Do/Beach-Monitoring",
+        location: "Big Creek Beach",
         status: "alert",
       },
     ],
@@ -106,6 +107,7 @@ const cacheBuilders: WaterSeriesResponse[] = [
         source: "Davenport Water Works",
         sourceUrl: "https://www.cityofdavenportiowa.com/pfas",
         affectedSystems: ["IA5224026"],
+        location: "Quad Cities Davenport",
         status: "alert",
       },
     ],
@@ -181,4 +183,3 @@ main().catch((error) => {
   console.error("water-etl failed", error)
   process.exit(1)
 })
-

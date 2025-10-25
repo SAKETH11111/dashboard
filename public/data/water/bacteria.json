@@ -51,6 +51,7 @@
       "issuedAt": "2024-05-18T12:00:00Z",
       "source": "Iowa DNR",
       "sourceUrl": "https://www.iowadnr.gov/Things-to-Do/Beach-Monitoring",
+      "location": "Big Creek Beach",
       "status": "alert"
     }
   ]

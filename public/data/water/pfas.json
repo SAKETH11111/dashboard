@@ -51,6 +51,7 @@
       "affectedSystems": [
         "IA5224026"
       ],
+      "location": "Quad Cities Davenport",
       "status": "alert"
     }
   ]

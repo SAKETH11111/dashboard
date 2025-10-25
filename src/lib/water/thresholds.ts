@@ -1,4 +1,4 @@
-import type { Contaminant, WaterThreshold } from "@/types/water"
+import type { ContaminantValue, WaterThreshold } from "@/types/water"
 
 export type ThresholdMetadata = WaterThreshold & {
   label: string
@@ -19,7 +19,7 @@ const DEFAULT_COLOR_TOKENS = {
   alert: "var(--water-alert)",
 }
 
-export const WATER_THRESHOLDS: Record<Contaminant, ThresholdMetadata> = {
+export const WATER_THRESHOLDS: Record<ContaminantValue, ThresholdMetadata> = {
   nitrate: {
     contaminant: "nitrate",
     label: "Nitrate (as N)",
@@ -140,7 +140,7 @@ export const WATER_THRESHOLDS: Record<Contaminant, ThresholdMetadata> = {
 }
 
 export const getThresholdForContaminant = (
-  contaminant: Contaminant,
+  contaminant: ContaminantValue,
 ): ThresholdMetadata => WATER_THRESHOLDS[contaminant]
 
 export const getWarnRatio = (threshold: ThresholdMetadata, value?: number | null) => {
@@ -150,4 +150,3 @@ export const getWarnRatio = (threshold: ThresholdMetadata, value?: number | null
 
   return value / threshold.alertLevel
 }
-

@@ -1,0 +1,34 @@
+[
+  {
+    "id": "advisory-1",
+    "type": "boil",
+    "title": "Boil Water Advisory - Cedar Rapids",
+    "description": "A boil water advisory has been issued for parts of Cedar Rapids due to a water main break. Residents should boil water for at least one minute before drinking, cooking, or brushing teeth.",
+    "systemId": "cedar-rapids-water",
+    "location": "Cedar Rapids, IA",
+    "issuedAt": "2024-01-14T15:45:00Z",
+    "expiresAt": "2024-01-16T15:45:00Z",
+    "severity": "high"
+  },
+  {
+    "id": "advisory-2", 
+    "type": "swim",
+    "title": "Swim Advisory - Lake Macbride",
+    "description": "High bacteria levels detected at Lake Macbride State Park. Swimming is not recommended until further notice.",
+    "systemId": "lake-macbride",
+    "location": "Solon, IA",
+    "issuedAt": "2024-01-13T08:20:00Z",
+    "expiresAt": "2024-01-20T08:20:00Z",
+    "severity": "medium"
+  },
+  {
+    "id": "advisory-3",
+    "type": "pfas",
+    "title": "PFAS Exceedance - Waterloo",
+    "description": "PFAS levels above the new EPA health advisory limit detected in Waterloo water supply. Residents are advised to consider alternative water sources.",
+    "systemId": "waterloo-water",
+    "location": "Waterloo, IA", 
+    "issuedAt": "2024-01-12T10:30:00Z",
+    "severity": "high"
+  }
+]

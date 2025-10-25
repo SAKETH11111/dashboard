@@ -9,8 +9,11 @@ import { WATER_THRESHOLDS } from "@/lib/water/thresholds"
 import { waterLogger } from "@/lib/water/logger"
 import {
   advisoryTypeSchema,
+  type AdvisorySeverity,
+  type Advisory,
   type AdvisoryType,
-  type Contaminant,
+  contaminantSchema,
+  type ContaminantValue,
   type WaterSeriesResponse,
   type WaterStatus,
   waterAdvisorySchema,
@@ -32,7 +35,7 @@ export type WaterSeriesQuery = {
 
 type SeriesBuilder = (query?: WaterSeriesQuery) => Promise<WaterSeriesResponse | null>
 
-const FILE_MAP: Record<Contaminant, string> = {
+const FILE_MAP: Record<ContaminantValue, string> = {
   nitrate: "nitrate.json",
   nitrite: "nitrite.json",
   ecoli: "bacteria.json",
@@ -82,7 +85,7 @@ function formatAdvisoryId(parts: string[]) {
     .replace(/^-+|-+$/g, "")
 }
 
-const readCachedSeries = cache(async (contaminant: Contaminant): Promise<WaterSeriesResponse> => {
+const readCachedSeries = cache(async (contaminant: ContaminantValue): Promise<WaterSeriesResponse> => {
   const filename = FILE_MAP[contaminant]
   if (!filename) {
     throw new Error(`Unsupported contaminant "${contaminant}"`)
@@ -207,6 +210,7 @@ function normalizeBeachRecords(records: DnrBeachRecord[], query?: WaterSeriesQue
         issuedAt: new Date(record.sampleDate).toISOString(),
         source: "Iowa DNR Beach Monitoring",
         sourceUrl: DNR_BEACH_ENDPOINT,
+        location: region,
         status: "alert",
       }),
     )
@@ -299,6 +303,7 @@ function normalizePfasRecords(records: PfasRecord[], query?: WaterSeriesQuery) {
             affectedSystems: [systemId],
             source: "Iowa DNR PFAS Survey",
             sourceUrl: "https://www.iowadnr.gov/Environmental-Protection/Water-Quality/PFAS",
+            location: region,
             status: determinePointStatus(latest.value, WATER_THRESHOLDS.pfas),
           }),
         ]
@@ -347,10 +352,10 @@ type SdwisRecord = {
   unit: string
   source: string
   metric: string
-  contaminant: Contaminant
+  contaminant: ContaminantValue
 }
 
-const SDWIS_STUBS: Record<Contaminant, SdwisRecord[]> = {
+const SDWIS_STUBS: Record<ContaminantValue, SdwisRecord[]> = {
   nitrate: [
     {
       systemId: "IA2580091",
@@ -613,7 +618,7 @@ const SDWIS_STUBS: Record<Contaminant, SdwisRecord[]> = {
   })),
 }
 
-async function fetchSdwisSeries(contaminant: Contaminant, query?: WaterSeriesQuery) {
+async function fetchSdwisSeries(contaminant: ContaminantValue, query?: WaterSeriesQuery) {
   // TODO: upgrade to live SDWIS / HHS integrations. For now fall back to structured stub data.
   waterLogger.warn("sdwis", `Live SDWIS integration for ${contaminant} not configured; using stub data.`)
 
@@ -718,7 +723,7 @@ export async function fetchRealtimeNitrateSensors(): Promise<RealtimeNitrateSens
 
 // --- Remote builder registry -----------------------------------------------
 
-const REMOTE_BUILDERS: Partial<Record<Contaminant, SeriesBuilder>> = {
+const REMOTE_BUILDERS: Partial<Record<ContaminantValue, SeriesBuilder>> = {
   ecoli: fetchDnrBeachSeries,
   pfas: fetchPfasDashboardSeries,
   nitrate: (query) => fetchSdwisSeries("nitrate", query),
@@ -731,7 +736,7 @@ const REMOTE_BUILDERS: Partial<Record<Contaminant, SeriesBuilder>> = {
 // --- Public API ------------------------------------------------------------
 
 export async function getWaterSeries(
-  contaminant: Contaminant,
+  contaminant: ContaminantValue,
   query?: WaterSeriesQuery,
 ): Promise<WaterSeriesResponse | null> {
   const builder = REMOTE_BUILDERS[contaminant]
@@ -751,7 +756,7 @@ export async function getWaterSeries(
 }
 
 export async function getWaterSeriesStrict(
-  contaminant: Contaminant,
+  contaminant: ContaminantValue,
   query?: WaterSeriesQuery,
 ): Promise<WaterSeriesResponse> {
   const series = await getWaterSeries(contaminant, query)
@@ -761,8 +766,8 @@ export async function getWaterSeriesStrict(
   return series
 }
 
-export async function getWaterSeriesCollection(contaminants?: Contaminant[]) {
-  const targets = contaminants ?? (Object.keys(FILE_MAP) as Contaminant[])
+export async function getWaterSeriesCollection(contaminants?: ContaminantValue[]) {
+  const targets = contaminants ?? (contaminantSchema.options as ContaminantValue[])
   const data = await Promise.all(
     targets.map(async (contaminant) => {
       try {
@@ -787,6 +792,50 @@ export function getLatestWaterPoint(series: WaterSeriesResponse) {
   return latest ?? null
 }
 
+function toSeverity(status: WaterStatus | undefined): AdvisorySeverity {
+  if (status === "alert") return "high"
+  if (status === "warn") return "medium"
+  if (status === "safe") return "low"
+  return "medium"
+}
+
+function toUiAdvisory(advisory: z.infer<typeof waterAdvisorySchema>): Advisory {
+  const severity = advisory.severity ?? toSeverity(advisory.status)
+  const description = advisory.description ?? advisory.summary ?? advisory.title
+
+  return {
+    ...advisory,
+    description,
+    severity,
+  }
+}
+
+async function readFallbackAdvisories(): Promise<Advisory[]> {
+  try {
+    const raw = await readFile(ADVISORIES_FALLBACK_FILE, "utf8")
+    const parsed = JSON.parse(raw)
+    if (!Array.isArray(parsed)) {
+      return []
+    }
+    return parsed
+      .map((entry) => {
+        const safe = waterAdvisorySchema.safeParse({
+          ...entry,
+          status: entry.status ?? "alert",
+        })
+        if (!safe.success) {
+          waterLogger.warn("advisories-fallback", "Invalid advisory entry", safe.error.flatten())
+          return null
+        }
+        return toUiAdvisory(safe.data)
+      })
+      .filter(Boolean) as Advisory[]
+  } catch (error) {
+    waterLogger.warn("advisories-fallback", "Unable to read fallback advisories", error)
+    return []
+  }
+}
+
 export async function getWaterAdvisories(filter?: { type?: AdvisoryType }) {
   const { data: series } = await getWaterSeriesCollection()
   const advisories = series.flatMap((item) => item.advisories ?? [])
@@ -801,7 +850,17 @@ export async function getWaterAdvisories(filter?: { type?: AdvisoryType }) {
     results = results.filter((advisory) => advisory.type === type)
   }
 
-  return results.sort((a, b) => b.issuedAt.localeCompare(a.issuedAt))
+  if (!results.length) {
+    const fallback = await readFallbackAdvisories()
+    if (filter?.type) {
+      return fallback.filter((advisory) => advisory.type === filter.type)
+    }
+    return fallback
+  }
+
+  return results
+    .map(toUiAdvisory)
+    .sort((a, b) => b.issuedAt.localeCompare(a.issuedAt))
 }
 
 export async function getWaterDatasourcesOverview() {
@@ -835,4 +894,3 @@ export const getIowaPfasSeries = (query?: WaterSeriesQuery) => getWaterSeriesStr
 export const getIowaArsenicSeries = (query?: WaterSeriesQuery) => getWaterSeriesStrict("arsenic", query)
 export const getIowaDbpSeries = (query?: WaterSeriesQuery) => getWaterSeriesStrict("dbp", query)
 export const getIowaFluorideSeries = (query?: WaterSeriesQuery) => getWaterSeriesStrict("fluoride", query)
-

@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import Image from "next/image"
-import * as React from "react"
+import Image from "next/image";
+import * as React from "react";
 import {
   Home,
   LineChart,
@@ -11,10 +11,11 @@ import {
   Settings,
   Sparkles,
   Trash2,
-} from "lucide-react"
+  Map,
+} from "lucide-react";
 
-import { NavMain } from "@/components/nav-main"
-import { NavUser } from "@/components/nav-user"
+import { NavMain } from "@/components/nav-main";
+import { NavUser } from "@/components/nav-user";
 import {
   Sidebar,
   SidebarContent,
@@ -27,17 +28,22 @@ import {
   SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar"
-import { useUserPreferences } from "@/hooks/use-user-preferences"
+} from "@/components/ui/sidebar";
+import { useUserPreferences } from "@/hooks/use-user-preferences";
 
 const navItems = [
   {
-    title: "Home",
+    title: "Dashboard",
     url: "/dashboard",
     icon: Home,
   },
   {
-    title: "Data",
+    title: "Map",
+    url: "/map",
+    icon: Map,
+  },
+  {
+    title: "Data Explorer",
     url: "/explorer",
     icon: LineChart,
   },
@@ -47,106 +53,127 @@ const navItems = [
     icon: Newspaper,
   },
   {
-    title: "Initiatives",
+    title: "About",
     url: "/initiatives",
     icon: Sparkles,
   },
-]
+];
 
 function generateListId() {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-    return crypto.randomUUID()
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+  ) {
+    return crypto.randomUUID();
   }
-  return `list-${Date.now()}`
+  return `list-${Date.now()}`;
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { preferences, setPreferences, updatePreferences } = useUserPreferences()
-  const displayName = preferences.name || "Sara Ahmed"
-  const displayEmail = preferences.email || "sara.ahmed@example.org"
-  const displayDepartment = preferences.department || "DESA"
-  const lists = preferences.lists ?? []
-  const activeListId = preferences.activeListId ?? (lists[0]?.id ?? null)
+  const { preferences, setPreferences, updatePreferences } =
+    useUserPreferences();
+  const displayName = preferences.name || "Sara Ahmed";
+  const displayEmail = preferences.email || "sara.ahmed@example.org";
+  const displayDepartment = preferences.department || "DESA";
+  const lists = preferences.lists ?? [];
+  const activeListId = preferences.activeListId ?? lists[0]?.id ?? null;
 
   const handleSelectList = React.useCallback(
     (listId: string) => {
-      if (!listId || listId === activeListId) return
-      updatePreferences({ activeListId: listId })
+      if (!listId || listId === activeListId) return;
+      updatePreferences({ activeListId: listId });
     },
     [activeListId, updatePreferences]
-  )
+  );
 
   const handleAddList = React.useCallback(() => {
-    const defaultName = `New list ${lists.length + 1}`
+    const defaultName = `New list ${lists.length + 1}`;
     const name =
-      typeof window !== "undefined" ? window.prompt("Name your list", defaultName) ?? "" : defaultName
-    const trimmed = name.trim()
-    if (!trimmed) return
+      typeof window !== "undefined"
+        ? window.prompt("Name your list", defaultName) ?? ""
+        : defaultName;
+    const trimmed = name.trim();
+    if (!trimmed) return;
 
-    const newListId = generateListId()
+    const newListId = generateListId();
     setPreferences((current) => ({
       ...current,
-      lists: [...current.lists, { id: newListId, name: trimmed, datasetIds: [] }],
+      lists: [
+        ...current.lists,
+        { id: newListId, name: trimmed, datasetIds: [] },
+      ],
       activeListId: newListId,
-    }))
-  }, [lists.length, setPreferences])
+    }));
+  }, [lists.length, setPreferences]);
 
   const handleRenameList = React.useCallback(
     (listId: string, currentName: string) => {
       const nextName =
-        typeof window !== "undefined" ? window.prompt("Rename list", currentName) ?? "" : currentName
-      const trimmed = nextName.trim()
-      if (!trimmed || trimmed === currentName) return
+        typeof window !== "undefined"
+          ? window.prompt("Rename list", currentName) ?? ""
+          : currentName;
+      const trimmed = nextName.trim();
+      if (!trimmed || trimmed === currentName) return;
 
       setPreferences((current) => ({
         ...current,
         lists: current.lists.map((list) =>
           list.id === listId ? { ...list, name: trimmed } : list
         ),
-      }))
+      }));
     },
     [setPreferences]
-  )
+  );
 
   const handleRemoveList = React.useCallback(
     (listId: string) => {
       if (
         typeof window !== "undefined" &&
-        !window.confirm("Remove this list? Datasets will remain available in the catalog.")
+        !window.confirm(
+          "Remove this list? Datasets will remain available in the catalog."
+        )
       ) {
-        return
+        return;
       }
 
       setPreferences((current) => {
-        const remaining = current.lists.filter((list) => list.id !== listId)
+        const remaining = current.lists.filter((list) => list.id !== listId);
 
         if (remaining.length === 0) {
-          const fallbackId = generateListId()
+          const fallbackId = generateListId();
           return {
             ...current,
-            lists: [{ id: fallbackId, name: "My Saved Datasets", datasetIds: [] }],
+            lists: [
+              { id: fallbackId, name: "My Saved Datasets", datasetIds: [] },
+            ],
             activeListId: fallbackId,
-          }
+          };
         }
 
-        const nextActiveId = current.activeListId === listId ? remaining[0]?.id ?? null : current.activeListId
+        const nextActiveId =
+          current.activeListId === listId
+            ? remaining[0]?.id ?? null
+            : current.activeListId;
 
         return {
           ...current,
           lists: remaining,
           activeListId: nextActiveId,
-        }
-      })
+        };
+      });
     },
     [setPreferences]
-  )
+  );
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:!p-1.5">
+            <SidebarMenuButton
+              asChild
+              className="data-[slot=sidebar-menu-button]:!p-1.5"
+            >
               <a href="/dashboard" className="flex items-center gap-2">
                 <Image
                   src="/iowa-water/logo-mark.svg"
@@ -169,7 +196,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarGroupLabel>My Lists</SidebarGroupLabel>
           <SidebarMenu>
             {lists.map((list) => {
-              const datasetCount = list.datasetIds.length
+              const datasetCount = list.datasetIds.length;
 
               return (
                 <SidebarMenuItem key={list.id}>
@@ -181,14 +208,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   >
                     <span>{list.name}</span>
                   </SidebarMenuButton>
-                  {datasetCount ? <SidebarMenuBadge>{datasetCount}</SidebarMenuBadge> : null}
+                  {datasetCount ? (
+                    <SidebarMenuBadge>{datasetCount}</SidebarMenuBadge>
+                  ) : null}
                   <SidebarMenuAction
                     type="button"
                     aria-label={`Rename ${list.name}`}
                     onClick={(event) => {
-                      event.preventDefault()
-                      event.stopPropagation()
-                      handleRenameList(list.id, list.name)
+                      event.preventDefault();
+                      event.stopPropagation();
+                      handleRenameList(list.id, list.name);
                     }}
                     showOnHover
                   >
@@ -198,19 +227,23 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     type="button"
                     aria-label={`Remove ${list.name}`}
                     onClick={(event) => {
-                      event.preventDefault()
-                      event.stopPropagation()
-                      handleRemoveList(list.id)
+                      event.preventDefault();
+                      event.stopPropagation();
+                      handleRemoveList(list.id);
                     }}
                     showOnHover
                   >
                     <Trash2 className="size-4" />
                   </SidebarMenuAction>
                 </SidebarMenuItem>
-              )
+              );
             })}
             <SidebarMenuItem>
-              <SidebarMenuButton type="button" onClick={handleAddList} className="text-muted-foreground">
+              <SidebarMenuButton
+                type="button"
+                onClick={handleAddList}
+                className="text-muted-foreground"
+              >
                 <Plus className="size-4" />
                 <span>New</span>
               </SidebarMenuButton>
@@ -239,5 +272,5 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         />
       </SidebarFooter>
     </Sidebar>
-  )
+  );
 }
