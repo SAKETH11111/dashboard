@@ -1,202 +1,215 @@
-"use client"
+"use client";
 
-import type { CSSProperties } from "react"
-import { useMemo, useState } from "react"
+import type { CSSProperties } from "react";
+import { useMemo, useState } from "react";
+import { Download, Filter, Search, Calendar, MapPin } from "lucide-react";
 
-import { AppSidebar } from "@/components/app-sidebar"
-import { DatasetCard } from "@/components/dataset-card"
-import { DatasetCompareSheet } from "@/components/dataset-compare-sheet"
-import { SiteHeader } from "@/components/site-header"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet"
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
-import { Textarea } from "@/components/ui/textarea"
-import { climateDatasets, type DatasetDefinition, type DatasetDomain, type DatasetFrequency } from "@/data/datasets"
-import { useLocalStorage } from "@/hooks/use-local-storage"
-import { useUserPreferences } from "@/hooks/use-user-preferences"
-import { cn } from "@/lib/utils"
+import { AppSidebar } from "@/components/app-sidebar";
+import { SiteHeader } from "@/components/site-header";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { useLocalStorage } from "@/hooks/use-local-storage";
+import { Contaminant } from "@/types/water";
 
 type Filters = {
-  frequency: DatasetFrequency | "All"
-  domain: DatasetDomain | "All"
-  provider: string | "All"
-}
+  contaminant: Contaminant | "All";
+  systemType: "drinking" | "recreational" | "All";
+  status: "safe" | "warn" | "alert" | "All";
+  dateRange: "1y" | "5y" | "all";
+};
 
-const monitorCategories = new Set(["monitor"])
-const annualCategories = new Set(["annual"])
-const indexCategories = new Set(["index"])
-const createListId = () =>
-  typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-    ? crypto.randomUUID()
-    : `list-${Date.now()}`
+// Mock water data - in real implementation this would come from API
+const mockWaterData = [
+  {
+    id: "des-moines-nitrate",
+    systemName: "Des Moines Water Works",
+    systemType: "drinking" as const,
+    contaminant: "nitrate" as Contaminant,
+    value: 8.5,
+    unit: "mg/L",
+    status: "safe" as const,
+    lastUpdated: "2024-01-15T10:30:00Z",
+    location: "Des Moines, IA",
+    source: "Iowa DNR",
+  },
+  {
+    id: "cedar-rapids-pfas",
+    systemName: "Cedar Rapids Water Department",
+    systemType: "drinking" as const,
+    contaminant: "pfas" as Contaminant,
+    value: 15.2,
+    unit: "ng/L",
+    status: "alert" as const,
+    lastUpdated: "2024-01-14T15:45:00Z",
+    location: "Cedar Rapids, IA",
+    source: "Iowa DNR",
+  },
+  {
+    id: "lake-macbride-bacteria",
+    systemName: "Lake Macbride State Park",
+    systemType: "recreational" as const,
+    contaminant: "ecoli" as Contaminant,
+    value: 235,
+    unit: "CFU/100mL",
+    status: "alert" as const,
+    lastUpdated: "2024-01-13T08:20:00Z",
+    location: "Solon, IA",
+    source: "Iowa DNR Beach Monitoring",
+  },
+  {
+    id: "iowa-city-arsenic",
+    systemName: "Iowa City Water Department",
+    systemType: "drinking" as const,
+    contaminant: "arsenic" as Contaminant,
+    value: 3.2,
+    unit: "μg/L",
+    status: "safe" as const,
+    lastUpdated: "2024-01-15T12:00:00Z",
+    location: "Iowa City, IA",
+    source: "Iowa DNR",
+  },
+  {
+    id: "waterloo-fluoride",
+    systemName: "Waterloo Water Works",
+    systemType: "drinking" as const,
+    contaminant: "fluoride" as Contaminant,
+    value: 0.8,
+    unit: "mg/L",
+    status: "safe" as const,
+    lastUpdated: "2024-01-14T09:15:00Z",
+    location: "Waterloo, IA",
+    source: "Iowa DNR",
+  },
+];
+
+const contaminantOptions = [
+  { label: "All Contaminants", value: "All" },
+  { label: "Nitrate", value: Contaminant.NITRATE },
+  { label: "Nitrite", value: Contaminant.NITRITE },
+  { label: "E. coli", value: Contaminant.ECOLI },
+  { label: "PFAS", value: Contaminant.PFAS },
+  { label: "Arsenic", value: Contaminant.ARSENIC },
+  { label: "DBP", value: Contaminant.DBP },
+  { label: "Fluoride", value: Contaminant.FLUORIDE },
+];
+
+const systemTypeOptions = [
+  { label: "All Systems", value: "All" },
+  { label: "Drinking Water", value: "drinking" },
+  { label: "Recreational", value: "recreational" },
+];
+
+const statusOptions = [
+  { label: "All Status", value: "All" },
+  { label: "Safe", value: "safe" },
+  { label: "Warning", value: "warn" },
+  { label: "Alert", value: "alert" },
+];
+
+const statusConfig = {
+  safe: { color: "bg-green-500", label: "Safe", variant: "default" as const },
+  warn: {
+    color: "bg-yellow-500",
+    label: "Warning",
+    variant: "secondary" as const,
+  },
+  alert: {
+    color: "bg-red-500",
+    label: "Alert",
+    variant: "destructive" as const,
+  },
+};
 
 export default function ExplorerPage() {
-  const { preferences, setPreferences } = useUserPreferences()
   const [filters, setFilters] = useState<Filters>({
-    frequency: "All",
-    domain: "All",
-    provider: "All",
-  })
-  const [selected, setSelected] = useState<DatasetDefinition[]>([])
-  const [compareOpen, setCompareOpen] = useState(false)
-  const [notesMap, setNotesMap] = useLocalStorage<Record<string, string>>("climate-dataset-notes", {})
-  const [notesState, setNotesState] = useState<{ open: boolean; dataset: DatasetDefinition | null; draft: string }>({
-    open: false,
-    dataset: null,
-    draft: "",
-  })
+    contaminant: "All",
+    systemType: "All",
+    status: "All",
+    dateRange: "1y",
+  });
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedData, setSelectedData] = useState<string[]>([]);
 
-  const lists = preferences.lists ?? []
-  const activeList =
-    lists.find((list) => list.id === preferences.activeListId) ?? lists[0] ?? null
+  const filteredData = useMemo(() => {
+    return mockWaterData.filter((item) => {
+      if (
+        filters.contaminant !== "All" &&
+        item.contaminant !== filters.contaminant
+      )
+        return false;
+      if (
+        filters.systemType !== "All" &&
+        item.systemType !== filters.systemType
+      )
+        return false;
+      if (filters.status !== "All" && item.status !== filters.status)
+        return false;
+      if (
+        searchQuery &&
+        !item.systemName.toLowerCase().includes(searchQuery.toLowerCase()) &&
+        !item.location.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+        return false;
+      return true;
+    });
+  }, [filters, searchQuery]);
 
-  const frequencyOptions = useMemo<Array<{ label: string; value: DatasetFrequency | "All" }>>(
-    () => [
-      { label: "All", value: "All" },
-      { label: "Daily", value: "Daily" },
-      { label: "Monthly", value: "Monthly" },
-      { label: "Annual", value: "Annual" },
-    ],
-    []
-  )
+  const handleExportCSV = () => {
+    const csvData = filteredData.map((item) => ({
+      System: item.systemName,
+      Type: item.systemType,
+      Contaminant: item.contaminant,
+      Value: item.value,
+      Unit: item.unit,
+      Status: item.status,
+      Location: item.location,
+      "Last Updated": new Date(item.lastUpdated).toLocaleDateString(),
+      Source: item.source,
+    }));
 
-  const domainOptions = useMemo<Array<{ label: string; value: DatasetDomain | "All" }>>(() => {
-    const domains = Array.from(new Set(climateDatasets.map((dataset) => dataset.domain))).sort((a, b) =>
-      a.localeCompare(b)
-    )
-    return [{ label: "All domains", value: "All" }, ...domains.map((value) => ({ label: value, value }))]
-  }, [])
+    const csvContent = [
+      Object.keys(csvData[0]).join(","),
+      ...csvData.map((row) => Object.values(row).join(",")),
+    ].join("\n");
 
-  const providerOptions = useMemo(() => {
-    const providers = Array.from(new Set(climateDatasets.map((dataset) => dataset.provider))).sort((a, b) =>
-      a.localeCompare(b)
-    )
-    return providers
-  }, [])
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `iowa-water-data-${
+      new Date().toISOString().split("T")[0]
+    }.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
 
-  const filteredDatasets = useMemo(() => {
-    return climateDatasets.filter((dataset) => {
-      if (filters.frequency !== "All" && dataset.frequency !== filters.frequency) return false
-      if (filters.domain !== "All" && dataset.domain !== filters.domain) return false
-      if (filters.provider !== "All" && dataset.provider !== filters.provider) return false
-      return true
-    })
-  }, [filters])
-
-  const activePinnedIdSet = useMemo(
-    () => new Set(activeList?.datasetIds ?? []),
-    [activeList]
-  )
-
-  const pinnedDatasets = useMemo(
-    () => filteredDatasets.filter((dataset) => activePinnedIdSet.has(dataset.id)),
-    [filteredDatasets, activePinnedIdSet]
-  )
-
-  const monitorDatasets = useMemo(
-    () =>
-      filteredDatasets.filter(
-        (dataset) => monitorCategories.has(dataset.category) && !activePinnedIdSet.has(dataset.id)
-      ),
-    [filteredDatasets, activePinnedIdSet]
-  )
-
-  const annualDatasets = useMemo(
-    () =>
-      filteredDatasets.filter(
-        (dataset) => annualCategories.has(dataset.category) && !activePinnedIdSet.has(dataset.id)
-      ),
-    [filteredDatasets, activePinnedIdSet]
-  )
-
-  const indexDatasets = useMemo(
-    () =>
-      filteredDatasets.filter(
-        (dataset) => indexCategories.has(dataset.category) && !activePinnedIdSet.has(dataset.id)
-      ),
-    [filteredDatasets, activePinnedIdSet]
-  )
-
-  const handleCompareToggle = (dataset: DatasetDefinition) => {
-    if (selected.find((item) => item.id === dataset.id)) {
-      setSelected((prev) => prev.filter((item) => item.id !== dataset.id))
-      return
-    }
-    setSelected((prev) => [...prev, dataset])
-    setCompareOpen(true)
-  }
-
-  const handleRemoveDataset = (id: string) => {
-    setSelected((prev) => prev.filter((item) => item.id !== id))
-  }
-
-  const togglePin = (dataset: DatasetDefinition) => {
-    setPreferences((current) => {
-      if (!current.lists.length) {
-        const fallbackId = createListId()
-        return {
-          ...current,
-          lists: [{ id: fallbackId, name: "My Saved Datasets", datasetIds: [dataset.id] }],
-          activeListId: fallbackId,
-        }
-      }
-
-      const activeId =
-        current.activeListId && current.lists.some((list) => list.id === current.activeListId)
-          ? current.activeListId
-          : current.lists[0].id
-
-      const nextLists = current.lists.map((list) => {
-        if (list.id !== activeId) return list
-        const exists = list.datasetIds.includes(dataset.id)
-        return {
-          ...list,
-          datasetIds: exists
-            ? list.datasetIds.filter((id) => id !== dataset.id)
-            : [...list.datasetIds, dataset.id],
-        }
-      })
-
-      return {
-        ...current,
-        lists: nextLists,
-        activeListId: activeId,
-      }
-    })
-  }
-
-  const openNotes = (dataset: DatasetDefinition) => {
-    setNotesState({
-      open: true,
-      dataset,
-      draft: notesMap[dataset.id] ?? "",
-    })
-  }
-
-  const handleSaveNote = () => {
-    if (!notesState.dataset) return
-    setNotesMap((prev) => ({
-      ...prev,
-      [notesState.dataset!.id]: notesState.draft.trim(),
-    }))
-    setNotesState((prev) => ({ ...prev, open: false }))
-  }
-
-  const handleDeleteNote = () => {
-    if (!notesState.dataset) return
-    setNotesMap((prev) => {
-      const next = { ...prev }
-      delete next[notesState.dataset!.id]
-      return next
-    })
-    setNotesState((prev) => ({ ...prev, open: false }))
-  }
+  const handleSelectData = (id: string) => {
+    setSelectedData((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
 
   const sidebarStyle = {
     "--header-height": "calc(var(--spacing) * 12)",
-  } as CSSProperties
+  } as CSSProperties;
 
   return (
     <SidebarProvider style={sidebarStyle}>
@@ -208,341 +221,277 @@ export default function ExplorerPage() {
             <header className="flex flex-col gap-4 rounded-2xl border border-border/60 bg-card/80 p-6 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/70">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="space-y-3">
-                  <h1 className="text-3xl font-semibold tracking-tight">Climate Data Catalog</h1>
+                  <h1 className="text-3xl font-semibold tracking-tight">
+                    Water Data Explorer
+                  </h1>
                   <p className="max-w-2xl text-sm text-muted-foreground">
-                    Explore authoritative climate indicators curated from NOAA, NASA, NSIDC, FAO, and partner UN
-                    agencies. Pin datasets, take notes, and build comparisons before sending weekly briefings.
+                    Explore Iowa water quality data by contaminant, system type,
+                    and location. Filter, search, and export data for analysis.
                   </p>
                 </div>
                 <div className="flex flex-col items-end gap-2 text-right text-xs text-muted-foreground">
                   <Badge variant="secondary" className="text-xs">
-                    {filteredDatasets.length} datasets
+                    {filteredData.length} records
                   </Badge>
-                  <p>Filter by cadence, domain, or provider to narrow the catalog.</p>
+                  <p>Filter by contaminant, system type, or status.</p>
                 </div>
               </div>
             </header>
 
-            <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
+            <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
               <aside className="flex flex-col gap-6 rounded-2xl border border-border/60 bg-card/70 p-4 backdrop-blur">
-                <FilterBlock label="Cadence">
-                  <ToggleGroup
-                    type="single"
-                    value={filters.frequency}
-                    onValueChange={(value) =>
-                      setFilters((prev) => ({
-                        ...prev,
-                        frequency: (value as DatasetFrequency | "All") || "All",
-                      }))
-                    }
-                    variant="outline"
-                    className="grid grid-cols-2 gap-2"
-                  >
-                    {frequencyOptions.map((option) => (
-                      <ToggleGroupItem key={option.value} value={option.value} className="text-xs font-medium">
-                        {option.label}
-                      </ToggleGroupItem>
-                    ))}
-                  </ToggleGroup>
-                </FilterBlock>
-
-                <FilterBlock label="Domain">
-                  <ToggleGroup
-                    type="single"
-                    value={filters.domain}
-                    onValueChange={(value) =>
-                      setFilters((prev) => ({
-                        ...prev,
-                        domain: (value as DatasetDomain | "All") || "All",
-                      }))
-                    }
-                    variant="outline"
-                    className="grid grid-cols-2 gap-2"
-                  >
-                    {domainOptions.map((option) => (
-                      <ToggleGroupItem key={option.value} value={option.value} className="text-xs font-medium">
-                        {option.label}
-                      </ToggleGroupItem>
-                    ))}
-                  </ToggleGroup>
-                </FilterBlock>
-
-                <FilterBlock label="Provider">
-                  <div className="grid grid-cols-1 gap-2">
-                    <Button
-                      variant={filters.provider === "All" ? "secondary" : "outline"}
-                      size="sm"
-                      className="justify-start text-xs"
-                      onClick={() => setFilters((prev) => ({ ...prev, provider: "All" }))}
-                    >
-                      All providers
-                    </Button>
-                    {providerOptions.map((name) => (
-                      <Button
-                        key={name}
-                        variant={filters.provider === name ? "secondary" : "outline"}
-                        size="sm"
-                        className="justify-start text-xs"
-                        onClick={() => setFilters((prev) => ({ ...prev, provider: name }))}
-                      >
-                        {name}
-                      </Button>
-                    ))}
+                <FilterBlock label="Search">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      placeholder="Search systems..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10"
+                    />
                   </div>
                 </FilterBlock>
 
-                <div className="rounded-lg border border-dashed border-border/60 bg-muted/30 p-3 text-xs text-muted-foreground">
-                  <p className="font-medium text-foreground">Download policy</p>
-                  <p className="mt-1">
-                    Use the “View source” link on each dataset card to reach the official CSV/API maintained by the
-                    provider.
-                  </p>
+                <FilterBlock label="Contaminant">
+                  <Select
+                    value={filters.contaminant}
+                    onValueChange={(value) =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        contaminant: value as Contaminant | "All",
+                      }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {contaminantOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FilterBlock>
+
+                <FilterBlock label="System Type">
+                  <ToggleGroup
+                    type="single"
+                    value={filters.systemType}
+                    onValueChange={(value) =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        systemType: value as
+                          | "drinking"
+                          | "recreational"
+                          | "All",
+                      }))
+                    }
+                    variant="outline"
+                    className="grid grid-cols-1 gap-2"
+                  >
+                    {systemTypeOptions.map((option) => (
+                      <ToggleGroupItem
+                        key={option.value}
+                        value={option.value}
+                        className="text-xs font-medium"
+                      >
+                        {option.label}
+                      </ToggleGroupItem>
+                    ))}
+                  </ToggleGroup>
+                </FilterBlock>
+
+                <FilterBlock label="Status">
+                  <ToggleGroup
+                    type="single"
+                    value={filters.status}
+                    onValueChange={(value) =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        status: value as "safe" | "warn" | "alert" | "All",
+                      }))
+                    }
+                    variant="outline"
+                    className="grid grid-cols-1 gap-2"
+                  >
+                    {statusOptions.map((option) => (
+                      <ToggleGroupItem
+                        key={option.value}
+                        value={option.value}
+                        className="text-xs font-medium"
+                      >
+                        {option.label}
+                      </ToggleGroupItem>
+                    ))}
+                  </ToggleGroup>
+                </FilterBlock>
+
+                <FilterBlock label="Date Range">
+                  <ToggleGroup
+                    type="single"
+                    value={filters.dateRange}
+                    onValueChange={(value) =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        dateRange: value as "1y" | "5y" | "all",
+                      }))
+                    }
+                    variant="outline"
+                    className="grid grid-cols-1 gap-2"
+                  >
+                    <ToggleGroupItem value="1y" className="text-xs font-medium">
+                      1 Year
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="5y" className="text-xs font-medium">
+                      5 Years
+                    </ToggleGroupItem>
+                    <ToggleGroupItem
+                      value="all"
+                      className="text-xs font-medium"
+                    >
+                      All Time
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+                </FilterBlock>
+
+                <div className="flex flex-col gap-2">
+                  <Button
+                    onClick={handleExportCSV}
+                    disabled={filteredData.length === 0}
+                    className="w-full"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Export CSV
+                  </Button>
+                  {selectedData.length > 0 && (
+                    <Button
+                      variant="outline"
+                      onClick={() => setSelectedData([])}
+                      className="w-full"
+                    >
+                      Clear Selection ({selectedData.length})
+                    </Button>
+                  )}
                 </div>
               </aside>
 
-              <main className="space-y-8">
-                {pinnedDatasets.length ? (
-                  <>
-                    <SectionHeader
-                      title="Pinned datasets"
-                      description={
-                        activeList
-                          ? `Your "${activeList.name}" list across monitors, annual reports, and indices.`
-                          : "Your quick access list across monitors, annual reports, and indices."
-                      }
-                      action={
-                        <Badge variant="secondary" className="text-xs">
-                          {pinnedDatasets.length} pinned
-                        </Badge>
-                      }
-                    />
-                    <DatasetGrid
-                      datasets={pinnedDatasets}
-                      selected={selected}
-                      onCompare={handleCompareToggle}
-                      pinnedSet={activePinnedIdSet}
-                      onTogglePin={togglePin}
-                      onOpenNotes={openNotes}
-                      notesMap={notesMap}
-                    />
-                  </>
-                ) : null}
+              <main className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-semibold">
+                      Water Quality Data
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                      {filteredData.length} records found
+                    </p>
+                  </div>
+                </div>
 
-                <SectionHeader
-                  title="Live monitors"
-                  description="Daily and monthly indicators you can compare instantly."
-                  action={
-                    <Button
-                      variant={selected.length ? "default" : "outline"}
-                      size="sm"
-                      disabled={!selected.length}
-                      onClick={() => setCompareOpen(true)}
-                    >
-                      Compare ({selected.length})
-                    </Button>
-                  }
-                />
-                {monitorDatasets.length ? (
-                  <DatasetGrid
-                    datasets={monitorDatasets}
-                    selected={selected}
-                    onCompare={handleCompareToggle}
-                    pinnedSet={activePinnedIdSet}
-                    onTogglePin={togglePin}
-                    onOpenNotes={openNotes}
-                    notesMap={notesMap}
-                  />
+                {filteredData.length > 0 ? (
+                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    {filteredData.map((item) => (
+                      <WaterDataCard
+                        key={item.id}
+                        data={item}
+                        selected={selectedData.includes(item.id)}
+                        onSelect={() => handleSelectData(item.id)}
+                      />
+                    ))}
+                  </div>
                 ) : (
-                  <EmptyState message="No monitor datasets match the current filters." />
+                  <div className="rounded-lg border border-dashed border-border/60 bg-muted/30 p-6 text-center text-sm text-muted-foreground">
+                    No data matches the current filters.
+                  </div>
                 )}
-
-                {annualDatasets.length ? (
-                  <>
-                    <SectionHeader
-                      title="Annual & thematic series"
-                      description="Slower moving metrics for land use, energy systems, and finance."
-                    />
-                    <DatasetGrid
-                      datasets={annualDatasets}
-                      selected={selected}
-                      onCompare={handleCompareToggle}
-                      pinnedSet={activePinnedIdSet}
-                      onTogglePin={togglePin}
-                      onOpenNotes={openNotes}
-                      notesMap={notesMap}
-                    />
-                  </>
-                ) : null}
-
-                {indexDatasets.length ? (
-                  <>
-                    <SectionHeader
-                      title="Climate indices"
-                      description="Drivers like ENSO and ocean heat content to contextualize the monitors."
-                    />
-                    <DatasetGrid
-                      datasets={indexDatasets}
-                      selected={selected}
-                      onCompare={handleCompareToggle}
-                      pinnedSet={activePinnedIdSet}
-                      onTogglePin={togglePin}
-                      onOpenNotes={openNotes}
-                      notesMap={notesMap}
-                    />
-                  </>
-                ) : null}
               </main>
             </div>
           </div>
         </div>
       </SidebarInset>
-      <DatasetCompareSheet
-        open={compareOpen}
-        onOpenChange={setCompareOpen}
-        datasets={selected}
-        onRemove={handleRemoveDataset}
-      />
-      <DatasetNotesSheet
-        open={notesState.open}
-        dataset={notesState.dataset}
-        value={notesState.draft}
-        onChange={(draft) => setNotesState((prev) => ({ ...prev, draft }))}
-        onSave={handleSaveNote}
-        onDelete={handleDeleteNote}
-        onClose={() => setNotesState((prev) => ({ ...prev, open: false }))}
-      />
     </SidebarProvider>
-  )
+  );
 }
 
-function FilterBlock({ label, children }: { label: string; children: React.ReactNode }) {
+function FilterBlock({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <section className="space-y-2">
-      <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</h3>
+      <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        {label}
+      </h3>
       {children}
     </section>
-  )
+  );
 }
 
-function SectionHeader({
-  title,
-  description,
-  action,
-}: {
-  title: string
-  description?: string
-  action?: React.ReactNode
-}) {
-  return (
-    <div className="flex flex-wrap items-center justify-between gap-3">
-      <div className="space-y-1">
-        <h2 className="text-lg font-semibold text-foreground">{title}</h2>
-        {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
-      </div>
-      {action}
-    </div>
-  )
-}
-
-function DatasetGrid({
-  datasets,
+function WaterDataCard({
+  data,
   selected,
-  onCompare,
-  pinnedSet,
-  onTogglePin,
-  onOpenNotes,
-  notesMap,
+  onSelect,
 }: {
-  datasets: DatasetDefinition[]
-  selected: DatasetDefinition[]
-  onCompare: (dataset: DatasetDefinition) => void
-  pinnedSet: Set<string>
-  onTogglePin: (dataset: DatasetDefinition) => void
-  onOpenNotes: (dataset: DatasetDefinition) => void
-  notesMap: Record<string, string>
+  data: (typeof mockWaterData)[0];
+  selected: boolean;
+  onSelect: () => void;
 }) {
-  if (!datasets.length) return null
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-      {datasets.map((dataset) => {
-        const isSelected = selected.some((item) => item.id === dataset.id)
-        return (
-          <DatasetCard
-            key={dataset.id}
-            dataset={dataset}
-            onCompare={onCompare}
-            selected={isSelected}
-            pinned={pinnedSet.has(dataset.id)}
-            onTogglePin={onTogglePin}
-            onOpenNotes={onOpenNotes}
-            hasNotes={Boolean(notesMap[dataset.id]?.trim())}
-          />
-        )
-      })}
-    </div>
-  )
-}
-
-function EmptyState({ message }: { message: string }) {
-  return (
-    <div className="rounded-lg border border-dashed border-border/60 bg-muted/30 p-6 text-center text-sm text-muted-foreground">
-      {message}
-    </div>
-  )
-}
-
-function DatasetNotesSheet({
-  open,
-  dataset,
-  value,
-  onChange,
-  onSave,
-  onDelete,
-  onClose,
-}: {
-  open: boolean
-  dataset: DatasetDefinition | null
-  value: string
-  onChange: (value: string) => void
-  onSave: () => void
-  onDelete: () => void
-  onClose: () => void
-}) {
-  const canDelete = Boolean(value.trim())
-  return (
-    <Sheet open={open} onOpenChange={(next) => !next && onClose()}>
-      <SheetContent className="w-full sm:max-w-md">
-        <SheetHeader>
-          <SheetTitle>Notes for {dataset?.title ?? ""}</SheetTitle>
-        </SheetHeader>
-        <div className="flex flex-1 flex-col gap-3 py-4">
-          <Textarea
-            value={value}
-            onChange={(event) => onChange(event.target.value)}
-            placeholder="Capture context, data caveats, or planned follow-up for this dataset. Notes stay on this device."
-            className="min-h-[220px]"
-          />
-        </div>
-        <SheetFooter className="flex items-center justify-between gap-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            className={cn("text-destructive", !canDelete && "opacity-50")}
-            onClick={onDelete}
-            disabled={!canDelete}
-          >
-            Clear note
-          </Button>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button size="sm" onClick={onSave} disabled={!dataset}>
-              Save note
-            </Button>
+    <Card
+      className={`cursor-pointer transition-all hover:shadow-md ${
+        selected ? "ring-2 ring-primary" : ""
+      }`}
+      onClick={onSelect}
+    >
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between">
+          <div className="space-y-1">
+            <CardTitle className="text-base">{data.systemName}</CardTitle>
+            <CardDescription className="flex items-center gap-1 text-xs">
+              <MapPin className="h-3 w-3" />
+              {data.location}
+            </CardDescription>
           </div>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
-  )
+          <Badge
+            variant={statusConfig[data.status].variant}
+            className="text-xs"
+          >
+            {statusConfig[data.status].label}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="grid grid-cols-2 gap-2 text-sm">
+          <div>
+            <Label className="text-xs text-muted-foreground">Contaminant</Label>
+            <p className="font-medium capitalize">{data.contaminant}</p>
+          </div>
+          <div>
+            <Label className="text-xs text-muted-foreground">Value</Label>
+            <p className="font-medium">
+              {data.value} {data.unit}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <div className="flex items-center gap-1">
+            <Calendar className="h-3 w-3" />
+            {new Date(data.lastUpdated).toLocaleDateString()}
+          </div>
+          <Badge variant="outline" className="text-xs">
+            {data.systemType}
+          </Badge>
+        </div>
+
+        <div className="text-xs text-muted-foreground">
+          Source: {data.source}
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
