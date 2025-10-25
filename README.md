@@ -1,36 +1,78 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## Iowa Water Quality Dashboard
 
-## Getting Started
+A public dashboard built with Next.js that helps Iowans understand local drinking and recreational water quality—starting with nitrate, nitrite, E. coli, PFAS, arsenic, disinfection byproducts, and fluoride trends.
 
-First, run the development server:
+### Getting Started
+
+Install dependencies and launch the local dev server:
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The app runs at [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Generate the initial water JSON cache (rebuild whenever upstream data changes):
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run water:etl
+```
 
-## Learn More
+### Data Contract
 
-To learn more about Next.js, take a look at the following resources:
+The shared types for the data/API track live in `src/types/water.ts`. The core contract is the `WaterSeriesResponse` JSON shape returned by all water endpoints:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```ts
+type WaterSeriesResponse = {
+  contaminant: "nitrate" | "nitrite" | "ecoli" | "pfas" | "arsenic" | "dbp" | "fluoride"
+  metric: string
+  unit: string
+  source: string
+  sourceUrl?: string
+  updatedAt: string
+  region: string
+  regionType?: "state" | "county" | "system" | "watershed" | "site" | "custom"
+  systemId?: string
+  points: Array<{ date: string; value: number | null }>
+  status: "safe" | "warn" | "alert" | "unknown"
+  threshold?: WaterThreshold
+  advisories?: WaterAdvisory[]
+  notes?: string
+}
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Base thresholds and health copy are defined in `src/lib/water/thresholds.ts`.
 
-## Deploy on Vercel
+Stubbed JSON responses that power early UI work are stored under `public/data/water/`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Water API Endpoints
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+All routes return the `WaterSeriesResponse` contract unless noted otherwise.
+
+- `GET /api/water/nitrate` — Optional query params: `systemId`, `zip`
+- `GET /api/water/nitrite` — Optional query params: `systemId`
+- `GET /api/water/bacteria` — Optional query params: `systemId`, `type=ecoli`
+- `GET /api/water/pfas` — Optional query params: `systemId`
+- `GET /api/water/arsenic` — Optional query params: `systemId`, `county`
+- `GET /api/water/dbp` — Optional query params: `systemId`, `kind=tthm|haa5`
+- `GET /api/water/fluoride` — Optional query params: `systemId`
+- `GET /api/water/advisories` — Optional query params: `type=boil|swim|pfas`
+
+Routes will hydrate from cached JSON in `public/data/water` first, then upgrade to live adapters in `src/lib/water/iowa-datasources.ts`.
+
+### Project Structure Highlights
+
+- `src/lib/water` — Thresholds, alert logic, data-source adapters (WIP)
+- `src/app/api/water/*` — Route handlers (to be implemented with ISR)
+- `scripts/water-etl` — Data fetchers that normalize CSV/API sources into `public/data/water`
+
+### Contributing
+
+1. Use feature branches and open PRs for review.
+2. Keep TypeScript strict by expanding schemas in `src/types/water.ts`.
+3. Update stub JSON and tests whenever the contract changes.
+
+### License
+
+This project inherits the upstream UN Climate template license until rebranded assets and copy are finalized.

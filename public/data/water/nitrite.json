@@ -1,0 +1,42 @@
+{
+  "contaminant": "nitrite",
+  "metric": "Nitrite (as N)",
+  "unit": "mg/L",
+  "source": "Iowa DNR Compliance (stub)",
+  "updatedAt": "2024-04-15T12:00:00Z",
+  "region": "Cedar Rapids Water",
+  "regionType": "system",
+  "systemId": "IA3114560",
+  "points": [
+    {
+      "date": "2023-10-01",
+      "value": 0.12,
+      "status": "safe"
+    },
+    {
+      "date": "2023-12-01",
+      "value": 0.16,
+      "status": "safe"
+    },
+    {
+      "date": "2024-02-01",
+      "value": 0.24,
+      "status": "safe"
+    },
+    {
+      "date": "2024-04-01",
+      "value": 0.32,
+      "status": "safe"
+    }
+  ],
+  "status": "warn",
+  "threshold": {
+    "contaminant": "nitrite",
+    "unit": "mg/L",
+    "mcl": 1,
+    "warnLevel": 0.5,
+    "alertLevel": 1,
+    "notes": "EPA MCL for nitrite is 1 mg/L as nitrogen. Infants are highly sensitive to elevated nitrite."
+  },
+  "advisories": []
+}

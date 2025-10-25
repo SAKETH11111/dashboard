@@ -1,0 +1,42 @@
+{
+  "contaminant": "arsenic",
+  "metric": "Arsenic",
+  "unit": "µg/L",
+  "source": "EPA SDWIS (stub)",
+  "updatedAt": "2024-02-20T10:00:00Z",
+  "region": "City of Marshalltown",
+  "regionType": "system",
+  "systemId": "IA5970011",
+  "points": [
+    {
+      "date": "2023-05-01",
+      "value": 4.8,
+      "status": "safe"
+    },
+    {
+      "date": "2023-08-01",
+      "value": 5.2,
+      "status": "warn"
+    },
+    {
+      "date": "2023-11-01",
+      "value": 6.1,
+      "status": "warn"
+    },
+    {
+      "date": "2024-02-01",
+      "value": 6.4,
+      "status": "warn"
+    }
+  ],
+  "status": "warn",
+  "threshold": {
+    "contaminant": "arsenic",
+    "unit": "µg/L",
+    "mcl": 10,
+    "warnLevel": 5,
+    "alertLevel": 10,
+    "notes": "EPA MCL for arsenic is 10 µg/L. Chronic exposure above 5 µg/L has been linked to cancer and cardiovascular risks."
+  },
+  "advisories": []
+}

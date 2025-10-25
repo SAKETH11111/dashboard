@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="droplet" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#4db6f1" />
+      <stop offset="100%" stop-color="#0a6fb7" />
+    </linearGradient>
+  </defs>
+  <path
+    d="M32 4c-6.4 9.7-16 19.5-16 30.4 0 9.8 7.2 17.6 16 17.6s16-7.8 16-17.6C48 23.5 38.4 13.7 32 4z"
+    fill="url(#droplet)"
+  />
+  <path
+    d="M24.5 35.8c0 5 3.6 8.4 7.5 8.4 3.9 0 7.5-3.4 7.5-8.4 0-5.2-4-9.6-7.5-13.1-3.5 3.5-7.5 7.9-7.5 13.1z"
+    fill="#ffffff"
+    opacity="0.35"
+  />
+</svg>

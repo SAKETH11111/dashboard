@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "water:etl": "tsx scripts/water-etl/build-cache.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

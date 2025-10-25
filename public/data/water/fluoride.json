@@ -1,0 +1,47 @@
+{
+  "contaminant": "fluoride",
+  "metric": "Fluoride",
+  "unit": "mg/L",
+  "source": "Iowa HHS Oral Health (stub)",
+  "updatedAt": "2024-01-31T00:00:00Z",
+  "region": "Sioux City Water",
+  "regionType": "system",
+  "systemId": "IA8300487",
+  "points": [
+    {
+      "date": "2023-09-30",
+      "value": 0.76,
+      "status": "safe"
+    },
+    {
+      "date": "2023-10-31",
+      "value": 0.74,
+      "status": "safe"
+    },
+    {
+      "date": "2023-11-30",
+      "value": 0.71,
+      "status": "safe"
+    },
+    {
+      "date": "2023-12-31",
+      "value": 0.69,
+      "status": "safe"
+    },
+    {
+      "date": "2024-01-31",
+      "value": 0.72,
+      "status": "safe"
+    }
+  ],
+  "status": "warn",
+  "threshold": {
+    "contaminant": "fluoride",
+    "unit": "mg/L",
+    "mcl": 4,
+    "warnLevel": 2,
+    "alertLevel": 4,
+    "notes": "EPA primary MCL is 4 mg/L with a secondary standard of 2 mg/L to prevent dental fluorosis. Many systems target 0.7 mg/L for cavity prevention."
+  },
+  "advisories": []
+}

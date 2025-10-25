@@ -1,0 +1,42 @@
+{
+  "contaminant": "dbp",
+  "metric": "Disinfection Byproducts (TTHM)",
+  "unit": "µg/L",
+  "source": "Iowa HHS Compliance (stub)",
+  "updatedAt": "2023-12-31T00:00:00Z",
+  "region": "West Des Moines Water Works",
+  "regionType": "system",
+  "systemId": "IA2570970",
+  "points": [
+    {
+      "date": "2023-03-31",
+      "value": 58.2,
+      "status": "warn"
+    },
+    {
+      "date": "2023-06-30",
+      "value": 61.7,
+      "status": "warn"
+    },
+    {
+      "date": "2023-09-30",
+      "value": 63.5,
+      "status": "warn"
+    },
+    {
+      "date": "2023-12-31",
+      "value": 64.8,
+      "status": "warn"
+    }
+  ],
+  "status": "warn",
+  "threshold": {
+    "contaminant": "dbp",
+    "unit": "µg/L",
+    "mcl": 80,
+    "warnLevel": 56,
+    "alertLevel": 80,
+    "notes": "EPA Stage 2 DBPR sets MCLs at 80 µg/L for total trihalomethanes (TTHM) and 60 µg/L for haloacetic acids (HAA5). Utilities report locational running annual averages."
+  },
+  "advisories": []
+}

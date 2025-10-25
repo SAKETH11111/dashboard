@@ -149,13 +149,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:!p-1.5">
               <a href="/dashboard" className="flex items-center gap-2">
                 <Image
-                  src="/UN_emblem_blue.svg"
-                  alt="United Nations emblem"
-                  width={24}
-                  height={24}
+                  src="/iowa-water/logo-mark.svg"
+                  alt="Iowa Water droplet"
+                  width={28}
+                  height={28}
                   priority
                 />
-                <span className="text-base font-semibold text-sidebar-foreground">UN Climate</span>
+                <span className="text-base font-semibold text-sidebar-foreground">
+                  Iowa Water Quality
+                </span>
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
