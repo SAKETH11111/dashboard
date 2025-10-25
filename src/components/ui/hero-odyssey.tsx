@@ -1,14 +1,11 @@
-"use client"
-import React, { useState, useRef, useEffect } from 'react'
-import Link from 'next/link'
-import { motion } from 'framer-motion'
-
-
+"use client";
+import React, { useState, useRef, useEffect } from "react";
+import Link from "next/link";
+import { motion } from "framer-motion";
 
 interface FeatureItemProps {
-  title: string
-  description: string
-  position: string
+  title: string;
+  description: string;
 }
 
 interface LightningProps {
@@ -216,9 +213,8 @@ const Lightning: React.FC<LightningProps> = ({
   return <canvas ref={canvasRef} className="w-full h-full relative" />;
 };
 
-
-const FeatureItem: React.FC<FeatureItemProps> = ({ title, description, position }) => (
-  <div className={`absolute ${position} z-10 transition-transform duration-500 hover:scale-110`}>
+const FeatureItem: React.FC<FeatureItemProps> = ({ title, description }) => (
+  <div className={`z-10 transition-transform duration-500 hover:scale-110`}>
     <div className="flex items-center gap-2">
       <span className="relative flex-shrink-0">
         <span className="block h-2 w-2 rounded-full bg-white" />
@@ -230,7 +226,7 @@ const FeatureItem: React.FC<FeatureItemProps> = ({ title, description, position 
       </div>
     </div>
   </div>
-)
+);
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -241,7 +237,7 @@ const containerVariants = {
       delayChildren: 0.2,
     },
   },
-}
+};
 
 const itemVariants = {
   hidden: { y: 20, opacity: 0 },
@@ -249,65 +245,109 @@ const itemVariants = {
     y: 0,
     opacity: 1,
   },
-}
+};
 
 export const HeroSection: React.FC = () => {
-  const [hue] = useState(202)
+  const [hue] = useState(200); // Blue hue for water theme
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-black text-white">
       <div className="absolute inset-0 z-0">
         <div className="absolute inset-0 bg-black/80" />
-        <div className="absolute top-[52%] left-1/2 h-[700px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle_at_30%_80%,#1e3a8a_15%,#020617_70%,#01040f_100%)] blur-3xl" />
+        <div className="absolute top-[52%] left-1/2 h-[700px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle_at_30%_80%,#0ea5e9_15%,#0c4a6e_70%,#082f49_100%)] blur-3xl" />
         <Lightning hue={hue} intensity={0.55} speed={1.8} size={2} />
       </div>
 
       <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col items-center px-4 pb-24 pt-28 text-center sm:px-8">
-        <motion.div variants={containerVariants} initial="hidden" animate="visible" className="flex flex-col items-center gap-10">
-          <motion.div variants={itemVariants} transition={{ duration: 0.6, ease: "easeOut" }} className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs uppercase tracking-[0.4em] text-white/70">
-            United Nations Climate Pulse
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="flex flex-col items-center gap-10"
+        >
+          <motion.div
+            variants={itemVariants}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs uppercase tracking-[0.4em] text-white/70"
+          >
+            Iowa Water Quality Dashboard
           </motion.div>
 
-          <motion.h1 variants={itemVariants} transition={{ duration: 0.6, ease: "easeOut" }} className="max-w-4xl text-4xl font-light leading-tight sm:text-6xl">
-            A luminous command center for real-time climate intelligence
+          <motion.h1
+            variants={itemVariants}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="max-w-4xl text-4xl font-light leading-tight sm:text-6xl"
+          >
+            Trusted Iowa water data to track nitrate, PFAS, bacteria, and other
+            contaminant trends
           </motion.h1>
 
-          <motion.p variants={itemVariants} transition={{ duration: 0.6, ease: "easeOut" }} className="max-w-2xl text-base text-white/70 sm:text-lg">
-            Monitor atmospheric signals, sea ice, ocean heat, and renewable momentum in one orchestrated view. Tune the experience, brief decision makers, and stay ahead of accelerating change.
+          <motion.p
+            variants={itemVariants}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="max-w-2xl text-base text-white/70 sm:text-lg"
+          >
+            Monitor water quality across Iowa's public water systems and
+            recreational sites. Track nitrate, nitrite, E. coli, PFAS, arsenic,
+            DBPs, and fluoride levels with real-time advisories and health
+            guidance.
           </motion.p>
 
-          <motion.div variants={itemVariants} transition={{ duration: 0.6, ease: "easeOut" }} className="flex flex-col items-center gap-4 sm:flex-row">
+          <motion.div
+            variants={itemVariants}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="flex flex-col items-center gap-4 sm:flex-row"
+          >
             <Link
               href="/dashboard"
               className="flex items-center gap-3 rounded-full bg-white/90 px-6 py-3 text-sm font-medium text-slate-900 transition hover:bg-white"
             >
-              Launch live dashboard
-              <span aria-hidden className="text-lg">→</span>
+              View Water Dashboard
+              <span aria-hidden className="text-lg">
+                →
+              </span>
             </Link>
             <Link
-              href="/settings"
+              href="/map"
               className="rounded-full border border-white/30 px-6 py-3 text-sm text-white/80 transition hover:border-white hover:text-white"
             >
-              Configure my climate profile
+              Explore Water Map
             </Link>
           </motion.div>
         </motion.div>
 
-        <motion.div variants={containerVariants} initial="hidden" animate="visible" className="relative mt-24 hidden h-40 w-full sm:block">
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="relative mt-24 hidden h-40 w-full sm:block"
+        >
           <div className="absolute left-0 top-0">
-            <FeatureItem title="Live indicators" description="NOAA, NASA, ECMWF feeds" position="relative" />
+            <FeatureItem
+              title="Real-time monitoring"
+              description="EPA & Iowa DNR data feeds"
+            />
           </div>
           <div className="absolute left-0 right-0 top-0 mx-auto w-fit">
-            <FeatureItem title="Curated UN reports" description="Briefings from UNEP & UNFCCC" position="relative" />
+            <FeatureItem
+              title="Health advisories"
+              description="Boil water & swim alerts"
+            />
           </div>
           <div className="absolute right-0 top-0">
-            <FeatureItem title="Automated summaries" description="Weekly pulse emails" position="relative" />
+            <FeatureItem
+              title="Interactive map"
+              description="System locations & status"
+            />
           </div>
           <div className="absolute bottom-0 left-1/2 -translate-x-1/2">
-            <FeatureItem title="Global collaborations" description="Share initiatives and responses" position="relative" />
+            <FeatureItem
+              title="Public transparency"
+              description="Open data for all Iowans"
+            />
           </div>
         </motion.div>
       </div>
     </div>
-  )
-}
+  );
+};

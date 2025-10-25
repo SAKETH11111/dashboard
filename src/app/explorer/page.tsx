@@ -2,7 +2,14 @@
 
 import type { CSSProperties } from "react";
 import { useMemo, useState } from "react";
-import { Download, Search, Calendar, MapPin } from "lucide-react";
+import {
+  Download,
+  Search,
+  Calendar,
+  MapPin,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
@@ -146,6 +153,7 @@ export default function ExplorerPage() {
   });
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedData, setSelectedData] = useState<string[]>([]);
+  const [isFiltersExpanded, setIsFiltersExpanded] = useState(true);
 
   const filteredData = useMemo(() => {
     return mockWaterData.filter((item) => {
@@ -237,149 +245,183 @@ export default function ExplorerPage() {
               </div>
             </header>
 
-            <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
-              <aside className="flex flex-col gap-6 rounded-2xl border border-border/60 bg-card/70 p-4 backdrop-blur">
-                <FilterBlock label="Search">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      placeholder="Search systems..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                </FilterBlock>
+            <div
+              className={`grid gap-6 transition-all ${
+                isFiltersExpanded
+                  ? "lg:grid-cols-[320px_1fr]"
+                  : "lg:grid-cols-[60px_1fr]"
+              }`}
+            >
+              <aside className="flex flex-col rounded-2xl border border-border/60 bg-card/70 backdrop-blur overflow-hidden">
+                <button
+                  onClick={() => setIsFiltersExpanded(!isFiltersExpanded)}
+                  className={`flex items-center gap-2 px-5 py-4 hover:bg-muted/50 transition-colors ${
+                    !isFiltersExpanded && "justify-center"
+                  }`}
+                >
+                  {isFiltersExpanded ? (
+                    <>
+                      <h3 className="text-sm font-semibold">Filters</h3>
+                      <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                    </>
+                  ) : (
+                    <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                  )}
+                </button>
 
-                <FilterBlock label="Contaminant">
-                  <Select
-                    value={filters.contaminant}
-                    onValueChange={(value) =>
-                      setFilters((prev) => ({
-                        ...prev,
-                        contaminant: value as Contaminant | "All",
-                      }))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {contaminantOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FilterBlock>
+                <div
+                  className={`flex flex-col gap-4 px-5 pb-5 ${
+                    !isFiltersExpanded && "hidden"
+                  }`}
+                >
+                  <FilterBlock label="Search">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        placeholder="Search systems..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </FilterBlock>
 
-                <FilterBlock label="System Type">
-                  <ToggleGroup
-                    type="single"
-                    value={filters.systemType}
-                    onValueChange={(value) =>
-                      setFilters((prev) => ({
-                        ...prev,
-                        systemType: value as
-                          | "drinking"
-                          | "recreational"
-                          | "All",
-                      }))
-                    }
-                    variant="outline"
-                    className="grid grid-cols-1 gap-2"
-                  >
-                    {systemTypeOptions.map((option) => (
-                      <ToggleGroupItem
-                        key={option.value}
-                        value={option.value}
-                        className="text-xs font-medium"
-                      >
-                        {option.label}
-                      </ToggleGroupItem>
-                    ))}
-                  </ToggleGroup>
-                </FilterBlock>
-
-                <FilterBlock label="Status">
-                  <ToggleGroup
-                    type="single"
-                    value={filters.status}
-                    onValueChange={(value) =>
-                      setFilters((prev) => ({
-                        ...prev,
-                        status: value as "safe" | "warn" | "alert" | "All",
-                      }))
-                    }
-                    variant="outline"
-                    className="grid grid-cols-1 gap-2"
-                  >
-                    {statusOptions.map((option) => (
-                      <ToggleGroupItem
-                        key={option.value}
-                        value={option.value}
-                        className="text-xs font-medium"
-                      >
-                        {option.label}
-                      </ToggleGroupItem>
-                    ))}
-                  </ToggleGroup>
-                </FilterBlock>
-
-                <FilterBlock label="Date Range">
-                  <ToggleGroup
-                    type="single"
-                    value={filters.dateRange}
-                    onValueChange={(value) =>
-                      setFilters((prev) => ({
-                        ...prev,
-                        dateRange: value as "1y" | "5y" | "all",
-                      }))
-                    }
-                    variant="outline"
-                    className="grid grid-cols-1 gap-2"
-                  >
-                    <ToggleGroupItem value="1y" className="text-xs font-medium">
-                      1 Year
-                    </ToggleGroupItem>
-                    <ToggleGroupItem value="5y" className="text-xs font-medium">
-                      5 Years
-                    </ToggleGroupItem>
-                    <ToggleGroupItem
-                      value="all"
-                      className="text-xs font-medium"
+                  <FilterBlock label="Contaminant">
+                    <Select
+                      value={filters.contaminant}
+                      onValueChange={(value) =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          contaminant: value as Contaminant | "All",
+                        }))
+                      }
                     >
-                      All Time
-                    </ToggleGroupItem>
-                  </ToggleGroup>
-                </FilterBlock>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {contaminantOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FilterBlock>
 
-                <div className="flex flex-col gap-2">
-                  <Button
-                    onClick={handleExportCSV}
-                    disabled={filteredData.length === 0}
-                    className="w-full"
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Export CSV
-                  </Button>
-                  {selectedData.length > 0 && (
-                    <Button
+                  <FilterBlock label="System Type">
+                    <ToggleGroup
+                      type="single"
+                      value={filters.systemType}
+                      onValueChange={(value) =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          systemType: value as
+                            | "drinking"
+                            | "recreational"
+                            | "All",
+                        }))
+                      }
                       variant="outline"
-                      onClick={() => setSelectedData([])}
+                      className="grid grid-cols-1 gap-2"
+                    >
+                      {systemTypeOptions.map((option) => (
+                        <ToggleGroupItem
+                          key={option.value}
+                          value={option.value}
+                          className="text-xs font-medium"
+                        >
+                          {option.label}
+                        </ToggleGroupItem>
+                      ))}
+                    </ToggleGroup>
+                  </FilterBlock>
+
+                  <FilterBlock label="Status">
+                    <ToggleGroup
+                      type="single"
+                      value={filters.status}
+                      onValueChange={(value) =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          status: value as "safe" | "warn" | "alert" | "All",
+                        }))
+                      }
+                      variant="outline"
+                      className="grid grid-cols-1 gap-2"
+                    >
+                      {statusOptions.map((option) => (
+                        <ToggleGroupItem
+                          key={option.value}
+                          value={option.value}
+                          className="text-xs font-medium"
+                        >
+                          {option.label}
+                        </ToggleGroupItem>
+                      ))}
+                    </ToggleGroup>
+                  </FilterBlock>
+
+                  <FilterBlock label="Date Range">
+                    <ToggleGroup
+                      type="single"
+                      value={filters.dateRange}
+                      onValueChange={(value) =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          dateRange: value as "1y" | "5y" | "all",
+                        }))
+                      }
+                      variant="outline"
+                      className="grid grid-cols-1 gap-2"
+                    >
+                      <ToggleGroupItem
+                        value="1y"
+                        className="text-xs font-medium"
+                      >
+                        1 Year
+                      </ToggleGroupItem>
+                      <ToggleGroupItem
+                        value="5y"
+                        className="text-xs font-medium"
+                      >
+                        5 Years
+                      </ToggleGroupItem>
+                      <ToggleGroupItem
+                        value="all"
+                        className="text-xs font-medium"
+                      >
+                        All Time
+                      </ToggleGroupItem>
+                    </ToggleGroup>
+                  </FilterBlock>
+
+                  <div className="flex flex-col gap-2 pt-2">
+                    <Button
+                      onClick={handleExportCSV}
+                      disabled={filteredData.length === 0}
                       className="w-full"
                     >
-                      Clear Selection ({selectedData.length})
+                      <Download className="h-4 w-4 mr-2" />
+                      Export CSV
                     </Button>
-                  )}
+                    {selectedData.length > 0 && (
+                      <Button
+                        variant="outline"
+                        onClick={() => setSelectedData([])}
+                        className="w-full"
+                      >
+                        Clear Selection ({selectedData.length})
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </aside>
 
-              <main className="space-y-6">
+              <main className="flex flex-col space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-lg font-semibold">
+                    <h2 className="text-xl font-semibold">
                       Water Quality Data
                     </h2>
                     <p className="text-sm text-muted-foreground">
@@ -389,7 +431,7 @@ export default function ExplorerPage() {
                 </div>
 
                 {filteredData.length > 0 ? (
-                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-3 [&>*:nth-child(4)]:md:col-span-2 [&>*:nth-child(4)]:xl:col-span-1">
                     {filteredData.map((item) => (
                       <WaterDataCard
                         key={item.id}
@@ -400,8 +442,15 @@ export default function ExplorerPage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="rounded-lg border border-dashed border-border/60 bg-muted/30 p-6 text-center text-sm text-muted-foreground">
-                    No data matches the current filters.
+                  <div className="flex items-center justify-center rounded-lg border border-dashed border-border/60 bg-muted/30 p-12 text-center text-sm text-muted-foreground">
+                    <div>
+                      <p className="font-medium">
+                        No data matches the current filters.
+                      </p>
+                      <p className="mt-1 text-xs">
+                        Try adjusting your search or filters.
+                      </p>
+                    </div>
                   </div>
                 )}
               </main>
@@ -441,54 +490,67 @@ function WaterDataCard({
 }) {
   return (
     <Card
-      className={`cursor-pointer transition-all hover:shadow-md ${
+      className={`cursor-pointer transition-all hover:shadow-lg hover:border-primary/50 ${
         selected ? "ring-2 ring-primary" : ""
       }`}
       onClick={onSelect}
     >
       <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <CardTitle className="text-base">{data.systemName}</CardTitle>
-            <CardDescription className="flex items-center gap-1 text-xs">
-              <MapPin className="h-3 w-3" />
-              {data.location}
+        <div className="flex items-start justify-between gap-3">
+          <div className="space-y-1.5 min-w-0 flex-1">
+            <CardTitle className="text-base leading-tight line-clamp-2">
+              {data.systemName}
+            </CardTitle>
+            <CardDescription className="flex items-center gap-1.5 text-xs">
+              <MapPin className="h-3 w-3 flex-shrink-0" />
+              <span className="truncate">{data.location}</span>
             </CardDescription>
           </div>
           <Badge
             variant={statusConfig[data.status].variant}
-            className="text-xs"
+            className="text-xs flex-shrink-0 whitespace-nowrap"
           >
             {statusConfig[data.status].label}
           </Badge>
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className="grid grid-cols-2 gap-2 text-sm">
-          <div>
-            <Label className="text-xs text-muted-foreground">Contaminant</Label>
-            <p className="font-medium capitalize">{data.contaminant}</p>
+        <div className="flex flex-wrap gap-2">
+          <div className="flex-1 min-w-[140px]">
+            <Label className="text-xs text-muted-foreground block mb-1">
+              Contaminant
+            </Label>
+            <p className="font-semibold text-sm capitalize">
+              {data.contaminant}
+            </p>
           </div>
-          <div>
-            <Label className="text-xs text-muted-foreground">Value</Label>
-            <p className="font-medium">
-              {data.value} {data.unit}
+          <div className="flex-1 min-w-[140px]">
+            <Label className="text-xs text-muted-foreground block mb-1">
+              Value
+            </Label>
+            <p className="font-semibold text-sm">
+              {data.value}{" "}
+              <span className="text-muted-foreground font-normal">
+                {data.unit}
+              </span>
             </p>
           </div>
         </div>
 
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <div className="flex items-center gap-1">
-            <Calendar className="h-3 w-3" />
-            {new Date(data.lastUpdated).toLocaleDateString()}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
+            <span className="whitespace-nowrap">
+              {new Date(data.lastUpdated).toLocaleDateString()}
+            </span>
           </div>
-          <Badge variant="outline" className="text-xs">
+          <Badge variant="outline" className="text-xs whitespace-nowrap">
             {data.systemType}
           </Badge>
         </div>
 
         <div className="text-xs text-muted-foreground">
-          Source: {data.source}
+          <span className="font-medium">Source:</span> {data.source}
         </div>
       </CardContent>
     </Card>
