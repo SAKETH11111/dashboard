@@ -1,262 +1,206 @@
-"use client";
+"use client"
 
-import { useState, useRef, useEffect } from "react";
-import { MapPin, Layers, Info, Filter, ZoomIn, ZoomOut } from "lucide-react";
-import { AppSidebar } from "@/components/app-sidebar";
-import { SiteHeader } from "@/components/site-header";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { useEffect, useMemo, useState, type CSSProperties } from "react"
+import { Info, Layers, MapPin } from "lucide-react"
+
+import { WATER_SYSTEMS } from "@/data/water-systems"
+import { AppSidebar } from "@/components/app-sidebar"
+import { WaterMap } from "@/components/map/water-map"
+import { SiteHeader } from "@/components/site-header"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+} from "@/components/ui/card"
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import {
   LocationPicker,
   useLocationPreference,
-} from "@/components/water/location-picker";
-import type { WaterSystem } from "@/types/water";
-import { Contaminant } from "@/types/water";
-import { cn } from "@/lib/utils";
-
-// Mock water systems data
-const MOCK_WATER_SYSTEMS: WaterSystem[] = [
-  {
-    id: "des-moines-water-works",
-    name: "Des Moines Water Works",
-    type: "drinking",
-    location: { lat: 41.5868, lng: -93.625 },
-    status: "safe",
-    lastUpdated: "2024-01-15T10:30:00Z",
-    contaminants: [Contaminant.NITRATE, Contaminant.ARSENIC, Contaminant.DBP],
-  },
-  {
-    id: "cedar-rapids-water",
-    name: "Cedar Rapids Water Department",
-    type: "drinking",
-    location: { lat: 41.9778, lng: -91.6656 },
-    status: "alert",
-    lastUpdated: "2024-01-14T15:45:00Z",
-    contaminants: [Contaminant.PFAS, Contaminant.NITRATE],
-  },
-  {
-    id: "lake-macbride",
-    name: "Lake Macbride State Park",
-    type: "recreational",
-    location: { lat: 41.8, lng: -91.5 },
-    status: "alert",
-    lastUpdated: "2024-01-13T08:20:00Z",
-    contaminants: [Contaminant.ECOLI],
-  },
-  {
-    id: "iowa-city-water",
-    name: "Iowa City Water Department",
-    type: "drinking",
-    location: { lat: 41.6611, lng: -91.5302 },
-    status: "safe",
-    lastUpdated: "2024-01-15T12:00:00Z",
-    contaminants: [Contaminant.ARSENIC, Contaminant.FLUORIDE],
-  },
-  {
-    id: "waterloo-water-works",
-    name: "Waterloo Water Works",
-    type: "drinking",
-    location: { lat: 42.4928, lng: -92.3422 },
-    status: "safe",
-    lastUpdated: "2024-01-14T09:15:00Z",
-    contaminants: [Contaminant.FLUORIDE, Contaminant.DBP],
-  },
-  {
-    id: "ames-water-utility",
-    name: "Ames Water Utility",
-    type: "drinking",
-    location: { lat: 42.0308, lng: -93.6209 },
-    status: "warn",
-    lastUpdated: "2024-01-12T14:30:00Z",
-    contaminants: [Contaminant.NITRATE, Contaminant.ARSENIC],
-  },
-];
-
-const STATUS_COLORS = {
-  safe: "#10b981", // emerald-500
-  warn: "#f59e0b", // amber-500
-  alert: "#ef4444", // red-500
-};
-
-const SYSTEM_TYPE_COLORS = {
-  drinking: "#3b82f6", // blue-500
-  recreational: "#8b5cf6", // violet-500
-};
-
-type MapViewport = {
-  center: { lat: number; lng: number };
-  zoom: number;
-};
+} from "@/components/water/location-picker"
+import { useWaterSeries } from "@/hooks/use-water-series"
+import { WATER_THRESHOLDS } from "@/lib/water/thresholds"
+import type { ContaminantValue, WaterSeriesResponse, WaterStatus, WaterSystem } from "@/types/water"
+import { Contaminant } from "@/types/water"
 
 type MapFilters = {
-  systemType: "drinking" | "recreational" | "all";
-  status: "safe" | "warn" | "alert" | "all";
-  contaminant: Contaminant | "all";
-};
+  systemType: "drinking" | "recreational" | "all"
+  status: WaterStatus | "all"
+  contaminant: ContaminantValue | "all"
+}
+
+type SystemMetric = {
+  contaminant: ContaminantValue
+  label: string
+  status: WaterStatus
+  latestValue: number | null
+  latestDate: string | null
+  unit: string
+  thresholdValue?: number | null
+  thresholdUnit?: string
+  source: string
+  sourceUrl?: string
+  series: WaterSeriesResponse
+}
+
+type SystemWithMetrics = WaterSystem & {
+  metrics: SystemMetric[]
+}
+
+const STATUS_BADGE_VARIANTS: Record<WaterStatus, "default" | "secondary" | "destructive" | "outline"> = {
+  safe: "default",
+  warn: "secondary",
+  alert: "destructive",
+  unknown: "outline",
+}
+
+const STATUS_COLORS: Record<Exclude<WaterStatus, "unknown">, string> = {
+  safe: "#10b981",
+  warn: "#f59e0b",
+  alert: "#ef4444",
+}
+
+const sidebarStyle = {
+  "--header-height": "calc(var(--spacing) * 12)",
+} as CSSProperties
 
 export default function MapPage() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [viewport, setViewport] = useState<MapViewport>({
-    center: { lat: 41.878, lng: -93.0977 }, // Center of Iowa
-    zoom: 7,
-  });
   const [filters, setFilters] = useState<MapFilters>({
     systemType: "all",
     status: "all",
     contaminant: "all",
-  });
-  const [selectedSystem, setSelectedSystem] = useState<WaterSystem | null>(
-    null
-  );
-  const [showLegend, setShowLegend] = useState(true);
-  const { location } = useLocationPreference();
+  })
+  const [selectedSystemId, setSelectedSystemId] = useState<string | null>(null)
+  const [showLegend, setShowLegend] = useState(true)
+  const { location, setLocation } = useLocationPreference()
 
-  const filteredSystems = MOCK_WATER_SYSTEMS.filter((system) => {
-    if (filters.systemType !== "all" && system.type !== filters.systemType)
-      return false;
-    if (filters.status !== "all" && system.status !== filters.status)
-      return false;
-    if (
-      filters.contaminant !== "all" &&
-      !system.contaminants.includes(filters.contaminant)
-    )
-      return false;
-    return true;
-  });
+  const nitrateQuery = useWaterSeries(Contaminant.NITRATE)
+  const nitriteQuery = useWaterSeries(Contaminant.NITRITE)
+  const bacteriaQuery = useWaterSeries(Contaminant.ECOLI)
+  const pfasQuery = useWaterSeries(Contaminant.PFAS)
+  const arsenicQuery = useWaterSeries(Contaminant.ARSENIC)
+  const dbpQuery = useWaterSeries(Contaminant.DBP)
+  const fluorideQuery = useWaterSeries(Contaminant.FLUORIDE)
 
-  const drawMap = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+  const seriesByContaminant = useMemo(() => {
+    const map = new Map<ContaminantValue, WaterSeriesResponse>()
+    if (nitrateQuery.data) map.set(Contaminant.NITRATE, nitrateQuery.data)
+    if (nitriteQuery.data) map.set(Contaminant.NITRITE, nitriteQuery.data)
+    if (bacteriaQuery.data) map.set(Contaminant.ECOLI, bacteriaQuery.data)
+    if (pfasQuery.data) map.set(Contaminant.PFAS, pfasQuery.data)
+    if (arsenicQuery.data) map.set(Contaminant.ARSENIC, arsenicQuery.data)
+    if (dbpQuery.data) map.set(Contaminant.DBP, dbpQuery.data)
+    if (fluorideQuery.data) map.set(Contaminant.FLUORIDE, fluorideQuery.data)
+    return map
+  }, [
+    nitrateQuery.data,
+    nitriteQuery.data,
+    bacteriaQuery.data,
+    pfasQuery.data,
+    arsenicQuery.data,
+    dbpQuery.data,
+    fluorideQuery.data,
+  ])
 
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+  const seriesQueries = [
+    nitrateQuery,
+    nitriteQuery,
+    bacteriaQuery,
+    pfasQuery,
+    arsenicQuery,
+    dbpQuery,
+    fluorideQuery,
+  ]
 
-    // Set canvas size to match container
-    const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width;
-    canvas.height = rect.height;
+  const seriesError = seriesQueries.find((query) => query.error)?.error
+  const seriesErrorMessage =
+    seriesError instanceof Error
+      ? seriesError.message
+      : seriesError
+        ? String(seriesError)
+        : null
 
-    // Clear canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const systemsWithMetrics = useMemo<SystemWithMetrics[]>(() => {
+    return WATER_SYSTEMS.map((system) => {
+      const metrics = system.contaminants
+        .map((reference) => {
+          const series = seriesByContaminant.get(reference.id)
+          if (!series) return null
+          if (!matchesReference(reference, series)) return null
 
-    // Iowa bounds: roughly lat 40.4 to 43.5, lng -96.6 to -90.1
-    const iowaBounds = {
-      north: 43.5,
-      south: 40.4,
-      east: -90.1,
-      west: -96.6,
-    };
+          const latestPoint = getLatestPoint(series)
+          const threshold = series.threshold ?? WATER_THRESHOLDS[series.contaminant]
+          const thresholdValue =
+            threshold?.alertLevel ?? threshold?.healthAdvisory ?? threshold?.mcl ?? null
 
-    // Scale factors for mapping lat/lng to canvas coordinates
-    const scaleX = canvas.width / (iowaBounds.east - iowaBounds.west);
-    const scaleY = canvas.height / (iowaBounds.north - iowaBounds.south);
+          return {
+            contaminant: series.contaminant,
+            label: reference.label ?? series.metric,
+            status: series.status,
+            latestValue: latestPoint?.value ?? null,
+            latestDate: latestPoint?.date ?? series.updatedAt ?? null,
+            unit: series.unit,
+            thresholdValue,
+            thresholdUnit: threshold?.unit ?? series.unit,
+            source: series.source,
+            sourceUrl: series.sourceUrl,
+            series,
+          } satisfies SystemMetric
+        })
+        .filter(Boolean) as SystemMetric[]
 
-    // Draw Iowa outline (simplified)
-    ctx.strokeStyle = "#374151";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    // Simplified Iowa shape - using relative coordinates
-    const margin = 20;
-    ctx.moveTo(margin, margin);
-    ctx.lineTo(canvas.width - margin, margin);
-    ctx.lineTo(canvas.width - margin, canvas.height - margin);
-    ctx.lineTo(margin, canvas.height - margin);
-    ctx.closePath();
-    ctx.stroke();
-
-    // Draw water systems
-    filteredSystems.forEach((system) => {
-      // Convert lat/lng to canvas coordinates
-      const x = (system.location.lng - iowaBounds.west) * scaleX;
-      const y = (iowaBounds.north - system.location.lat) * scaleY;
-
-      if (x >= 0 && x <= canvas.width && y >= 0 && y <= canvas.height) {
-        // Draw marker
-        const statusColor = STATUS_COLORS[system.status];
-        const systemTypeColor = SYSTEM_TYPE_COLORS[system.type];
-
-        ctx.fillStyle = statusColor;
-        ctx.beginPath();
-        ctx.arc(x, y, 8, 0, 2 * Math.PI);
-        ctx.fill();
-
-        ctx.strokeStyle = systemTypeColor;
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.arc(x, y, 8, 0, 2 * Math.PI);
-        ctx.stroke();
-
-        // Draw system type indicator
-        ctx.fillStyle = systemTypeColor;
-        ctx.beginPath();
-        ctx.arc(x, y, 4, 0, 2 * Math.PI);
-        ctx.fill();
+      return {
+        ...system,
+        status: deriveSystemStatus(system.status, metrics),
+        metrics,
       }
-    });
-  };
+    })
+  }, [seriesByContaminant])
+
+  const selectedSystem = useMemo(
+    () => systemsWithMetrics.find((system) => system.id === selectedSystemId) ?? null,
+    [systemsWithMetrics, selectedSystemId],
+  )
+
+  const filteredSystems = useMemo(() => {
+    return systemsWithMetrics.filter((system) => {
+      if (filters.systemType !== "all" && system.type !== filters.systemType) return false
+      if (filters.status !== "all" && system.status !== filters.status) return false
+      if (
+        filters.contaminant !== "all" &&
+        !system.metrics.some((metric) => metric.contaminant === filters.contaminant)
+      ) {
+        return false
+      }
+      if (location) {
+        const target = location.name.toLowerCase()
+        const matchesName = system.name.toLowerCase().includes(target)
+        const matchesId = system.id.toLowerCase().includes(target)
+        if (!matchesName && !matchesId) return false
+      }
+      return true
+    })
+  }, [systemsWithMetrics, filters, location])
 
   useEffect(() => {
-    drawMap();
+    if (selectedSystemId && !filteredSystems.some((system) => system.id === selectedSystemId)) {
+      setSelectedSystemId(null)
+    }
+  }, [filteredSystems, selectedSystemId])
 
-    // Handle window resize
-    const handleResize = () => {
-      drawMap();
-    };
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, [filters, viewport]);
-
-  const handleCanvasClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const rect = canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-
-    // Iowa bounds for coordinate conversion
-    const iowaBounds = {
-      north: 43.5,
-      south: 40.4,
-      east: -90.1,
-      west: -96.6,
-    };
-
-    const scaleX = canvas.width / (iowaBounds.east - iowaBounds.west);
-    const scaleY = canvas.height / (iowaBounds.north - iowaBounds.south);
-
-    // Find clicked system
-    const clickedSystem = filteredSystems.find((system) => {
-      const systemX = (system.location.lng - iowaBounds.west) * scaleX;
-      const systemY = (iowaBounds.north - system.location.lat) * scaleY;
-      const distance = Math.sqrt((x - systemX) ** 2 + (y - systemY) ** 2);
-      return distance <= 12;
-    });
-
-    setSelectedSystem(clickedSystem || null);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
-
-  const sidebarStyle = {
-    "--header-height": "calc(var(--spacing) * 12)",
-  } as React.CSSProperties;
+  const mapCenter = useMemo(() => {
+    if (selectedSystem?.location) {
+      return [selectedSystem.location.lng, selectedSystem.location.lat] as [number, number]
+    }
+    if (location?.coordinates) {
+      return [location.coordinates.lng, location.coordinates.lat] as [number, number]
+    }
+    return undefined
+  }, [selectedSystem, location])
 
   return (
     <SidebarProvider style={sidebarStyle}>
@@ -268,12 +212,10 @@ export default function MapPage() {
             <header className="flex flex-col gap-4 rounded-2xl border border-border/60 bg-card/80 p-6 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/70">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="space-y-3">
-                  <h1 className="text-3xl font-semibold tracking-tight">
-                    Water Quality Map
-                  </h1>
+                  <h1 className="text-3xl font-semibold tracking-tight">Water Quality Map</h1>
                   <p className="max-w-2xl text-sm text-muted-foreground">
-                    Explore Iowa water systems and recreational sites. Click
-                    markers to view details and advisories.
+                    Explore Iowa water systems and recreational sites. Click markers to view contaminant
+                    status, thresholds, and advisory context.
                   </p>
                 </div>
                 <div className="flex flex-col items-end gap-2 text-right text-xs text-muted-foreground">
@@ -292,309 +234,339 @@ export default function MapPage() {
                     Filters
                   </h3>
 
-                  <LocationPicker className="w-full" />
+                  <LocationPicker className="w-full" value={location} onChange={setLocation} showClear />
 
                   <div className="space-y-2">
-                    <h4 className="text-xs font-medium text-muted-foreground">
-                      System Type
-                    </h4>
+                    <h4 className="text-xs font-medium text-muted-foreground">System Type</h4>
                     <ToggleGroup
                       type="single"
                       value={filters.systemType}
                       onValueChange={(value) =>
                         setFilters((prev) => ({
                           ...prev,
-                          systemType: value as
-                            | "drinking"
-                            | "recreational"
-                            | "all",
+                          systemType: (value as MapFilters["systemType"]) || "all",
                         }))
                       }
                       variant="outline"
                       className="grid grid-cols-1 gap-2"
                     >
-                      <ToggleGroupItem
-                        value="all"
-                        className="text-xs font-medium"
-                      >
+                      <ToggleGroupItem value="all" className="text-xs font-medium">
                         All Systems
                       </ToggleGroupItem>
-                      <ToggleGroupItem
-                        value="drinking"
-                        className="text-xs font-medium"
-                      >
+                      <ToggleGroupItem value="drinking" className="text-xs font-medium">
                         Drinking Water
                       </ToggleGroupItem>
-                      <ToggleGroupItem
-                        value="recreational"
-                        className="text-xs font-medium"
-                      >
+                      <ToggleGroupItem value="recreational" className="text-xs font-medium">
                         Recreational
                       </ToggleGroupItem>
                     </ToggleGroup>
                   </div>
 
                   <div className="space-y-2">
-                    <h4 className="text-xs font-medium text-muted-foreground">
-                      Status
-                    </h4>
+                    <h4 className="text-xs font-medium text-muted-foreground">Status</h4>
                     <ToggleGroup
                       type="single"
                       value={filters.status}
                       onValueChange={(value) =>
                         setFilters((prev) => ({
                           ...prev,
-                          status: value as "safe" | "warn" | "alert" | "all",
+                          status: (value as MapFilters["status"]) || "all",
                         }))
                       }
                       variant="outline"
                       className="grid grid-cols-1 gap-2"
                     >
-                      <ToggleGroupItem
-                        value="all"
-                        className="text-xs font-medium"
-                      >
+                      <ToggleGroupItem value="all" className="text-xs font-medium">
                         All Status
                       </ToggleGroupItem>
-                      <ToggleGroupItem
-                        value="safe"
-                        className="text-xs font-medium"
-                      >
+                      <ToggleGroupItem value="safe" className="text-xs font-medium">
                         Safe
                       </ToggleGroupItem>
-                      <ToggleGroupItem
-                        value="warn"
-                        className="text-xs font-medium"
-                      >
-                        Warning
+                      <ToggleGroupItem value="warn" className="text-xs font-medium">
+                        Monitor
                       </ToggleGroupItem>
-                      <ToggleGroupItem
-                        value="alert"
-                        className="text-xs font-medium"
-                      >
-                        Alert
+                      <ToggleGroupItem value="alert" className="text-xs font-medium">
+                        Advisory
                       </ToggleGroupItem>
                     </ToggleGroup>
                   </div>
 
                   <div className="space-y-2">
-                    <h4 className="text-xs font-medium text-muted-foreground">
-                      Contaminant
-                    </h4>
+                    <h4 className="text-xs font-medium text-muted-foreground">Contaminant</h4>
                     <ToggleGroup
                       type="single"
                       value={filters.contaminant}
                       onValueChange={(value) =>
                         setFilters((prev) => ({
                           ...prev,
-                          contaminant: value as Contaminant | "all",
+                          contaminant: (value as MapFilters["contaminant"]) || "all",
                         }))
                       }
                       variant="outline"
                       className="grid grid-cols-1 gap-2"
                     >
-                      <ToggleGroupItem
-                        value="all"
-                        className="text-xs font-medium"
-                      >
+                      <ToggleGroupItem value="all" className="text-xs font-medium">
                         All Contaminants
                       </ToggleGroupItem>
-                      <ToggleGroupItem
-                        value={Contaminant.NITRATE}
-                        className="text-xs font-medium"
-                      >
-                        Nitrate
-                      </ToggleGroupItem>
-                      <ToggleGroupItem
-                        value={Contaminant.PFAS}
-                        className="text-xs font-medium"
-                      >
-                        PFAS
-                      </ToggleGroupItem>
-                      <ToggleGroupItem
-                        value={Contaminant.ECOLI}
-                        className="text-xs font-medium"
-                      >
-                        E. coli
-                      </ToggleGroupItem>
-                      <ToggleGroupItem
-                        value={Contaminant.ARSENIC}
-                        className="text-xs font-medium"
-                      >
-                        Arsenic
-                      </ToggleGroupItem>
+                      {Object.values(Contaminant).map((contaminant) => (
+                        <ToggleGroupItem key={contaminant} value={contaminant} className="text-xs font-medium">
+                          {contaminant === Contaminant.ECOLI ? "E. coli" : contaminant}
+                        </ToggleGroupItem>
+                      ))}
                     </ToggleGroup>
                   </div>
                 </div>
 
-                {showLegend && (
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-sm flex items-center gap-2">
-                        <Layers className="h-4 w-4" />
-                        Legend
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                      Legend
+                    </CardTitle>
+                    <Button variant="ghost" size="sm" onClick={() => setShowLegend((prev) => !prev)}>
+                      <Layers className="mr-2 h-4 w-4" />
+                      {showLegend ? "Hide" : "Show"}
+                    </Button>
+                  </CardHeader>
+                  {showLegend && (
+                    <CardContent className="space-y-3 text-xs">
                       <div className="space-y-2">
-                        <h4 className="text-xs font-medium text-muted-foreground">
-                          Status
-                        </h4>
+                        <span className="font-medium text-foreground/80">Status</span>
                         <div className="space-y-1">
-                          <div className="flex items-center gap-2 text-xs">
-                            <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
-                            <span>Safe</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-xs">
-                            <div className="w-3 h-3 rounded-full bg-amber-500"></div>
-                            <span>Warning</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-xs">
-                            <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                            <span>Alert</span>
-                          </div>
+                          <LegendItem color={STATUS_COLORS.safe} label="Safe" />
+                          <LegendItem color={STATUS_COLORS.warn} label="Monitor" />
+                          <LegendItem color={STATUS_COLORS.alert} label="Advisory" />
                         </div>
                       </div>
                       <div className="space-y-2">
-                        <h4 className="text-xs font-medium text-muted-foreground">
-                          System Type
-                        </h4>
+                        <span className="font-medium text-foreground/80">Ring color</span>
                         <div className="space-y-1">
-                          <div className="flex items-center gap-2 text-xs">
-                            <div className="w-3 h-3 rounded-full border-2 border-blue-500"></div>
-                            <span>Drinking Water</span>
-                          </div>
-                          <div className="flex items-center gap-2 text-xs">
-                            <div className="w-3 h-3 rounded-full border-2 border-violet-500"></div>
-                            <span>Recreational</span>
-                          </div>
+                          <LegendItem color="#3b82f6" label="Drinking water system" />
+                          <LegendItem color="#8b5cf6" label="Recreational site" />
                         </div>
                       </div>
                     </CardContent>
-                  </Card>
-                )}
+                  )}
+                </Card>
               </aside>
 
               <main className="space-y-6">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <h2 className="text-lg font-semibold">
-                      Iowa Water Systems
-                    </h2>
+                    <h2 className="text-lg font-semibold">Iowa Water Systems</h2>
                     <p className="text-sm text-muted-foreground">
-                      {filteredSystems.length} systems shown
+                      {filteredSystems.length} systems in current view
                     </p>
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowLegend(!showLegend)}
-                    >
-                      <Layers className="h-4 w-4 mr-2" />
-                      {showLegend ? "Hide" : "Show"} Legend
-                    </Button>
+                  <div className="flex items-center gap-2">
+                    {selectedSystem ? (
+                      <Button variant="outline" size="sm" onClick={() => setSelectedSystemId(null)}>
+                        <Info className="mr-2 h-4 w-4" />
+                        Clear selection
+                      </Button>
+                    ) : null}
                   </div>
                 </div>
 
+                {seriesErrorMessage ? (
+                  <Card className="border-amber-500/50 bg-amber-500/10">
+                    <CardContent className="flex items-center gap-3 py-4 text-sm text-amber-900">
+                      <Info className="h-5 w-5 flex-shrink-0" />
+                      <span>
+                        Unable to refresh some monitoring data. Cached values are shown. {seriesErrorMessage}
+                      </span>
+                    </CardContent>
+                  </Card>
+                ) : null}
+
                 <Card className="overflow-hidden">
                   <CardContent className="p-0">
-                    <div className="relative">
-                      <canvas
-                        ref={canvasRef}
-                        className="w-full h-[400px] cursor-pointer"
-                        onClick={handleCanvasClick}
-                      />
-                      <div className="absolute top-4 right-4 flex flex-col gap-2">
-                        <Button size="sm" variant="outline">
-                          <ZoomIn className="h-4 w-4" />
-                        </Button>
-                        <Button size="sm" variant="outline">
-                          <ZoomOut className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
+                    <WaterMap
+                      systems={filteredSystems}
+                      selectedSystem={selectedSystem}
+                      onSelect={(system) => setSelectedSystemId(system?.id ?? null)}
+                      center={mapCenter}
+                      zoom={mapCenter ? 8 : undefined}
+                      className="h-[520px] w-full"
+                    />
                   </CardContent>
                 </Card>
 
-                {selectedSystem && (
+                {selectedSystem ? (
                   <Card>
                     <CardHeader>
-                      <div className="flex items-start justify-between">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
-                          <CardTitle className="flex items-center gap-2">
+                          <CardTitle className="flex items-center gap-2 text-xl">
                             <MapPin className="h-4 w-4" />
                             {selectedSystem.name}
                           </CardTitle>
                           <CardDescription>
                             {selectedSystem.type === "drinking"
-                              ? "Drinking Water System"
-                              : "Recreational Site"}
+                              ? "Public drinking water system"
+                              : "Recreational monitoring site"}
                           </CardDescription>
                         </div>
-                        <Badge
-                          variant={
-                            selectedSystem.status === "safe"
-                              ? "default"
-                              : selectedSystem.status === "warn"
-                              ? "secondary"
-                              : "destructive"
-                          }
-                        >
-                          {selectedSystem.status}
+                        <Badge variant={STATUS_BADGE_VARIANTS[selectedSystem.status]}>
+                          {selectedSystem.status === "warn"
+                            ? "Monitor"
+                            : selectedSystem.status === "alert"
+                              ? "Advisory"
+                              : selectedSystem.status === "safe"
+                                ? "Safe"
+                                : "Unknown"}
                         </Badge>
                       </div>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4 text-sm">
+                    <CardContent className="space-y-6">
+                      <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
                         <div>
-                          <span className="text-muted-foreground">
-                            Last Updated:
-                          </span>
+                          <span className="text-muted-foreground">Last updated</span>
                           <p className="font-medium">
-                            {formatDate(selectedSystem.lastUpdated)}
+                            {selectedSystem.metrics[0]?.latestDate
+                              ? formatDate(selectedSystem.metrics[0]?.latestDate as string)
+                              : "Not available"}
                           </p>
                         </div>
                         <div>
-                          <span className="text-muted-foreground">
-                            Coordinates:
-                          </span>
+                          <span className="text-muted-foreground">Coordinates</span>
                           <p className="font-mono text-xs">
-                            {selectedSystem.location.lat.toFixed(4)},{" "}
-                            {selectedSystem.location.lng.toFixed(4)}
+                            {selectedSystem.location.lat.toFixed(4)}, {selectedSystem.location.lng.toFixed(4)}
                           </p>
                         </div>
                       </div>
 
-                      <div>
-                        <span className="text-sm text-muted-foreground">
-                          Monitored Contaminants:
-                        </span>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {selectedSystem.contaminants.map((contaminant) => (
-                            <Badge
-                              key={contaminant}
-                              variant="outline"
-                              className="text-xs"
-                            >
-                              {contaminant}
-                            </Badge>
-                          ))}
+                      {selectedSystem.metrics.length > 0 ? (
+                        <div className="space-y-4">
+                          <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                            Monitored Contaminants
+                          </h3>
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            {selectedSystem.metrics.map((metric) => (
+                              <div
+                                key={`${selectedSystem.id}-${metric.contaminant}`}
+                                className="space-y-2 rounded-lg border border-border/50 bg-muted/40 p-3"
+                              >
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-sm font-medium text-foreground">{metric.label}</span>
+                                  <Badge variant={STATUS_BADGE_VARIANTS[metric.status]}>
+                                    {metric.status === "warn"
+                                      ? "Monitor"
+                                      : metric.status === "alert"
+                                        ? "Advisory"
+                                        : metric.status === "safe"
+                                          ? "Safe"
+                                          : "Unknown"}
+                                  </Badge>
+                                </div>
+                                <div className="flex items-center justify-between text-sm text-foreground">
+                                  <span className="font-mono font-semibold">
+                                    {metric.latestValue !== null && metric.latestValue !== undefined
+                                      ? formatValue(metric.latestValue, metric.unit)
+                                      : "No sample"}
+                                  </span>
+                                  {metric.thresholdValue ? (
+                                    <span className="text-xs text-muted-foreground">
+                                      Standard {metric.thresholdValue} {metric.thresholdUnit ?? metric.unit}
+                                    </span>
+                                  ) : null}
+                                </div>
+                                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                                  {metric.latestDate ? (
+                                    <span>Sampled {formatDate(metric.latestDate)}</span>
+                                  ) : null}
+                                  {metric.sourceUrl ? (
+                                    <a
+                                      href={metric.sourceUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="font-medium text-primary underline-offset-2 hover:underline"
+                                    >
+                                      View source
+                                    </a>
+                                  ) : (
+                                    <span>{metric.source}</span>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      </div>
+                      ) : (
+                        <div className="rounded-lg border border-dashed border-border/60 bg-muted/30 p-4 text-sm text-muted-foreground">
+                          No monitoring data available for this system yet. Check back once sampling begins.
+                        </div>
+                      )}
 
-                      <Button variant="outline" size="sm" className="w-full">
-                        <Info className="h-4 w-4 mr-2" />
-                        View Detailed Report
-                      </Button>
+                      <div className="flex justify-end">
+                        <Button variant="outline" size="sm" onClick={() => setSelectedSystemId(null)}>
+                          <Info className="mr-2 h-4 w-4" />
+                          Close details
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
-                )}
+                ) : null}
               </main>
             </div>
           </div>
         </div>
       </SidebarInset>
     </SidebarProvider>
-  );
+  )
+}
+
+function LegendItem({ color, label }: { color: string; label: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="inline-block h-3 w-3 rounded-full" style={{ background: color }} />
+      <span>{label}</span>
+    </div>
+  )
+}
+
+function matchesReference(
+  reference: WaterSystem["contaminants"][number],
+  series: WaterSeriesResponse,
+) {
+  if (reference.systemId && series.systemId && reference.systemId !== series.systemId) {
+    return false
+  }
+  if (reference.site) {
+    const region = series.region?.toLowerCase() ?? ""
+    if (!region.includes(reference.site.toLowerCase())) {
+      return false
+    }
+  }
+  return true
+}
+
+function getLatestPoint(series: WaterSeriesResponse) {
+  const withValues = series.points
+    .slice()
+    .reverse()
+    .find((point) => point.value !== null && point.value !== undefined)
+  return withValues ?? null
+}
+
+function deriveSystemStatus(fallback: WaterStatus, metrics: SystemMetric[]): WaterStatus {
+  if (metrics.some((metric) => metric.status === "alert")) return "alert"
+  if (metrics.some((metric) => metric.status === "warn")) return "warn"
+  if (metrics.some((metric) => metric.status === "safe")) return "safe"
+  return fallback
+}
+
+function formatValue(value: number, unit: string) {
+  if (value >= 100) return `${value.toFixed(0)} ${unit}`
+  if (value >= 10) return `${value.toFixed(1)} ${unit}`
+  if (value >= 1) return `${value.toFixed(2)} ${unit}`
+  if (value > 0) return `${value.toFixed(3)} ${unit}`
+  return `${value} ${unit}`
+}
+
+function formatDate(dateString: string) {
+  return new Date(dateString).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  })
 }

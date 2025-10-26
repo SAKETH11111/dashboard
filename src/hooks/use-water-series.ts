@@ -1,66 +1,91 @@
 "use client"
 
+import { useMemo } from "react"
 import { useQuery, type UseQueryOptions } from "@tanstack/react-query"
+import { z } from "zod"
 
 import {
-  waterSeriesResponseSchema,
-  waterSeriesCollectionSchema,
-  type WaterSeriesResponse,
-  type WaterSeriesCollection,
+  advisorySchema,
+  type Advisory,
   type ContaminantValue,
+  waterSeriesResponseSchema,
+  type WaterSeriesResponse,
 } from "@/types/water"
 
-async function fetchWaterSeries(url: string): Promise<WaterSeriesResponse> {
-  const res = await fetch(url)
+type SeriesQueryParams = {
+  systemId?: string
+  zip?: string
+  site?: string
+  type?: string
+  county?: string
+}
+
+function buildQuery(params?: SeriesQueryParams) {
+  const search = new URLSearchParams()
+  if (!params) return ""
+  Object.entries(params).forEach(([key, value]) => {
+    if (value) {
+      search.set(key, value)
+    }
+  })
+  const query = search.toString()
+  return query ? `?${query}` : ""
+}
+
+async function fetchWaterSeries(
+  contaminant: ContaminantValue,
+  params?: SeriesQueryParams,
+): Promise<WaterSeriesResponse> {
+  const query = buildQuery(params)
+  const res = await fetch(`/api/water/${contaminant}${query}`)
   if (!res.ok) {
-    throw new Error(`Failed to fetch ${url}: ${res.status}`)
+    throw new Error(`Failed to fetch /api/water/${contaminant}: ${res.status}`)
   }
   const json = await res.json()
   return waterSeriesResponseSchema.parse(json)
 }
 
-async function fetchWaterSeriesCollection(url: string): Promise<WaterSeriesCollection> {
-  const res = await fetch(url)
+const advisoriesResponseSchema = z.array(advisorySchema)
+
+async function fetchAdvisories(params?: { type?: string }): Promise<Advisory[]> {
+  const search = new URLSearchParams()
+  if (params?.type) search.set("type", params.type)
+  const query = search.toString()
+  const res = await fetch(`/api/water/advisories${query ? `?${query}` : ""}`)
   if (!res.ok) {
-    throw new Error(`Failed to fetch ${url}: ${res.status}`)
+    throw new Error(`Failed to fetch advisories: ${res.status}`)
   }
   const json = await res.json()
-  return waterSeriesCollectionSchema.parse(json)
+  return advisoriesResponseSchema.parse(json)
 }
 
 export function useWaterSeries(
   contaminant: ContaminantValue,
-  options?: Pick<UseQueryOptions<WaterSeriesResponse>, "enabled">
+  params?: SeriesQueryParams,
+  options?: Pick<UseQueryOptions<WaterSeriesResponse>, "enabled">,
 ) {
-  return useQuery({
-    queryKey: ["water", contaminant],
-    queryFn: () => fetchWaterSeries(`/api/water/${contaminant}`),
-    staleTime: 1000 * 60 * 30, // 30 minutes
-    refetchOnWindowFocus: false,
-    ...options,
-  })
-}
+  const paramsKey = useMemo(() => (params ? JSON.stringify(params) : ""), [params])
+  const queryKey = useMemo(() => ["water", contaminant, paramsKey], [contaminant, paramsKey])
 
-export function useWaterSeriesCollection(
-  contaminants: ContaminantValue[],
-  options?: Pick<UseQueryOptions<WaterSeriesCollection>, "enabled">
-) {
   return useQuery({
-    queryKey: ["water", "collection", contaminants.sort()],
-    queryFn: () => fetchWaterSeriesCollection(`/api/water/collection?contaminants=${contaminants.join(",")}`),
-    staleTime: 1000 * 60 * 30, // 30 minutes
+    queryKey,
+    queryFn: () => fetchWaterSeries(contaminant, params),
+    staleTime: 1000 * 60 * 30,
     refetchOnWindowFocus: false,
     ...options,
   })
 }
 
 export function useWaterAdvisories(
-  options?: Pick<UseQueryOptions<WaterSeriesResponse>, "enabled">
+  params?: { type?: "boil" | "swim" | "pfas" },
+  options?: Pick<UseQueryOptions<Advisory[]>, "enabled">,
 ) {
+  const queryKey = useMemo(() => ["water", "advisories", params?.type ?? "all"], [params?.type])
+
   return useQuery({
-    queryKey: ["water", "advisories"],
-    queryFn: () => fetchWaterSeries("/api/water/advisories"),
-    staleTime: 1000 * 60 * 15, // 15 minutes - advisories change more frequently
+    queryKey,
+    queryFn: () => fetchAdvisories(params),
+    staleTime: 1000 * 60 * 15,
     refetchOnWindowFocus: false,
     ...options,
   })

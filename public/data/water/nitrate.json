@@ -3,38 +3,38 @@
   "metric": "Nitrate (as N)",
   "unit": "mg/L",
   "source": "Iowa DNR Source Water (stub)",
-  "updatedAt": "2024-05-20T12:00:00Z",
+  "updatedAt": "2025-08-15T12:00:00Z",
   "region": "Des Moines Water Works",
   "regionType": "system",
   "systemId": "IA2580091",
   "points": [
     {
-      "date": "2023-12-01",
+      "date": "2025-03-01",
       "value": 4.2,
       "status": "safe"
     },
     {
-      "date": "2024-01-01",
+      "date": "2025-04-01",
       "value": 4.8,
       "status": "safe"
     },
     {
-      "date": "2024-02-01",
+      "date": "2025-05-01",
       "value": 5.5,
       "status": "warn"
     },
     {
-      "date": "2024-03-01",
+      "date": "2025-06-01",
       "value": 6.2,
       "status": "warn"
     },
     {
-      "date": "2024-04-01",
+      "date": "2025-07-01",
       "value": 6.7,
       "status": "warn"
     },
     {
-      "date": "2024-05-01",
+      "date": "2025-08-01",
       "value": 7.1,
       "status": "warn"
     }

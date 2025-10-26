@@ -20,6 +20,7 @@ import {
   Tooltip,
   XAxis,
   YAxis,
+  type TooltipProps,
 } from "recharts";
 
 type WaterTrendCardProps = {
@@ -46,7 +47,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 function formatChartData(
   points: Array<{ date: string; value: number | null }>
-) {
+): TrendDatum[] {
   const oneYearAgo = new Date();
   oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
 
@@ -66,9 +67,20 @@ function formatChartData(
     .slice(-12); // Last 12 data points for readability
 }
 
-function CustomTooltip({ active, payload, label }: any) {
+type TrendDatum = {
+  date: string
+  value: number
+  fullDate: string
+}
+
+function CustomTooltip({
+  active,
+  payload,
+  label,
+}: TooltipProps<number, string>) {
   if (active && payload && payload.length) {
-    const data = payload[0].payload;
+    const data = payload[0]?.payload as TrendDatum | undefined
+    if (!data) return null
     return (
       <div className="rounded-lg border bg-background p-3 shadow-md">
         <p className="font-medium">{label}</p>

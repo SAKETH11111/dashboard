@@ -3,38 +3,38 @@
   "metric": "Fluoride",
   "unit": "mg/L",
   "source": "Iowa HHS Oral Health (stub)",
-  "updatedAt": "2024-01-31T00:00:00Z",
+  "updatedAt": "2025-06-30T00:00:00Z",
   "region": "Sioux City Water",
   "regionType": "system",
   "systemId": "IA8300487",
   "points": [
     {
-      "date": "2023-09-30",
+      "date": "2025-02-28",
       "value": 0.76,
       "status": "safe"
     },
     {
-      "date": "2023-10-31",
+      "date": "2025-03-31",
       "value": 0.74,
       "status": "safe"
     },
     {
-      "date": "2023-11-30",
+      "date": "2025-04-30",
       "value": 0.71,
       "status": "safe"
     },
     {
-      "date": "2023-12-31",
+      "date": "2025-05-31",
       "value": 0.69,
       "status": "safe"
     },
     {
-      "date": "2024-01-31",
-      "value": 0.72,
+      "date": "2025-06-30",
+      "value": 0.73,
       "status": "safe"
     }
   ],
-  "status": "warn",
+  "status": "safe",
   "threshold": {
     "contaminant": "fluoride",
     "unit": "mg/L",

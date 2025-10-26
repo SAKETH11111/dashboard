@@ -251,7 +251,7 @@ export function LocationPicker({
               </div>
             ) : searchQuery.trim() ? (
               <div className="p-4 text-center text-sm text-muted-foreground">
-                No locations found for "{searchQuery}"
+                No locations found for &quot;{searchQuery}&quot;
               </div>
             ) : (
               <div className="p-4 text-center text-sm text-muted-foreground">

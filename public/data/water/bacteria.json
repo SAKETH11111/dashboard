@@ -3,32 +3,32 @@
   "metric": "E. coli",
   "unit": "MPN/100mL",
   "source": "Iowa DNR Beach Monitoring (stub)",
-  "updatedAt": "2024-05-18T09:00:00Z",
+  "updatedAt": "2025-07-12T09:00:00Z",
   "region": "Big Creek Beach",
   "regionType": "site",
   "points": [
     {
-      "date": "2024-04-20",
+      "date": "2025-06-14",
       "value": 22,
       "status": "safe"
     },
     {
-      "date": "2024-04-27",
+      "date": "2025-06-21",
       "value": 35,
       "status": "safe"
     },
     {
-      "date": "2024-05-04",
+      "date": "2025-06-28",
       "value": 58,
       "status": "safe"
     },
     {
-      "date": "2024-05-11",
+      "date": "2025-07-05",
       "value": 165,
       "status": "warn"
     },
     {
-      "date": "2024-05-18",
+      "date": "2025-07-12",
       "value": 280,
       "status": "alert"
     }
@@ -43,12 +43,12 @@
   },
   "advisories": [
     {
-      "id": "2024-big-creek-beach-ecoli",
+      "id": "2025-big-creek-beach-ecoli",
       "type": "swim",
       "contaminant": "ecoli",
       "title": "Swim advisory issued",
       "summary": "Elevated E. coli detected on May 18 sample. Avoid swallowing water and monitor DNR updates.",
-      "issuedAt": "2024-05-18T12:00:00Z",
+      "issuedAt": "2025-07-12T12:00:00Z",
       "source": "Iowa DNR",
       "sourceUrl": "https://www.iowadnr.gov/Things-to-Do/Beach-Monitoring",
       "location": "Big Creek Beach",

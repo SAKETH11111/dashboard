@@ -23,6 +23,9 @@ import {
 
 const WATER_DATA_DIR = path.join(process.cwd(), "public", "data", "water")
 const REMOTE_TIMEOUT_MS = 20_000
+const ENABLE_REMOTE_SOURCES = process.env.WATER_ENABLE_REMOTE === "true"
+
+const remoteNotice = new Set<string>()
 
 export type WaterSeriesQuery = {
   systemId?: string
@@ -144,11 +147,11 @@ const STUB_DNR_BEACH: Array<{
   value: number | null
   advisory: boolean
 }> = [
-  { site: "Big Creek Beach", sampleDate: "2024-04-20", value: 22, advisory: false },
-  { site: "Big Creek Beach", sampleDate: "2024-04-27", value: 35, advisory: false },
-  { site: "Big Creek Beach", sampleDate: "2024-05-04", value: 58, advisory: false },
-  { site: "Big Creek Beach", sampleDate: "2024-05-11", value: 165, advisory: true },
-  { site: "Big Creek Beach", sampleDate: "2024-05-18", value: 280, advisory: true },
+  { site: "Big Creek Beach", sampleDate: "2025-06-14", value: 22, advisory: false },
+  { site: "Big Creek Beach", sampleDate: "2025-06-21", value: 35, advisory: false },
+  { site: "Big Creek Beach", sampleDate: "2025-06-28", value: 58, advisory: false },
+  { site: "Big Creek Beach", sampleDate: "2025-07-05", value: 165, advisory: true },
+  { site: "Big Creek Beach", sampleDate: "2025-07-12", value: 280, advisory: true },
 ]
 
 function normalizeBeachRecords(records: DnrBeachRecord[], query?: WaterSeriesQuery): WaterSeriesResponse | null {
@@ -233,6 +236,14 @@ function normalizeBeachRecords(records: DnrBeachRecord[], query?: WaterSeriesQue
 }
 
 async function fetchDnrBeachSeries(query?: WaterSeriesQuery) {
+  if (!ENABLE_REMOTE_SOURCES) {
+    if (!remoteNotice.has("dnr-beach")) {
+      waterLogger.info("dnr-beach", "Remote fetch disabled; using cached fixtures.")
+      remoteNotice.add("dnr-beach")
+    }
+    return normalizeBeachRecords(STUB_DNR_BEACH as unknown as DnrBeachRecord[], query)
+  }
+
   try {
     const payload = await fetchJson<unknown[]>(DNR_BEACH_ENDPOINT)
     const parsed = z.array(dnrBeachRecordSchema).parse(payload)
@@ -266,10 +277,10 @@ const pfasRecordSchema = z.object({
 type PfasRecord = z.infer<typeof pfasRecordSchema>
 
 const STUB_PFAS_RECORDS: PfasRecord[] = [
-  { system_id: "IA5224026", system_name: "Quad Cities Davenport", sample_date: "2023-06-15", sum_pfoa_pfos: 3.1 },
-  { system_id: "IA5224026", system_name: "Quad Cities Davenport", sample_date: "2023-09-18", sum_pfoa_pfos: 3.6 },
-  { system_id: "IA5224026", system_name: "Quad Cities Davenport", sample_date: "2023-12-12", sum_pfoa_pfos: 3.9 },
-  { system_id: "IA5224026", system_name: "Quad Cities Davenport", sample_date: "2024-03-25", sum_pfoa_pfos: 4.3 },
+  { system_id: "IA5224026", system_name: "Quad Cities Davenport", sample_date: "2025-03-12", sum_pfoa_pfos: 3.1 },
+  { system_id: "IA5224026", system_name: "Quad Cities Davenport", sample_date: "2025-04-09", sum_pfoa_pfos: 3.6 },
+  { system_id: "IA5224026", system_name: "Quad Cities Davenport", sample_date: "2025-05-07", sum_pfoa_pfos: 3.9 },
+  { system_id: "IA5224026", system_name: "Quad Cities Davenport", sample_date: "2025-06-01", sum_pfoa_pfos: 4.3 },
 ]
 
 function normalizePfasRecords(records: PfasRecord[], query?: WaterSeriesQuery) {
@@ -326,6 +337,14 @@ function normalizePfasRecords(records: PfasRecord[], query?: WaterSeriesQuery) {
 }
 
 async function fetchPfasDashboardSeries(query?: WaterSeriesQuery) {
+  if (!ENABLE_REMOTE_SOURCES) {
+    if (!remoteNotice.has("pfas-dashboard")) {
+      waterLogger.info("pfas-dashboard", "Remote fetch disabled; using cached fixtures.")
+      remoteNotice.add("pfas-dashboard")
+    }
+    return normalizePfasRecords(STUB_PFAS_RECORDS, query)
+  }
+
   try {
     const payload = await fetchJson<unknown[]>(DNR_PFAS_ENDPOINT)
     const parsed = z.array(pfasRecordSchema).parse(payload)
@@ -360,7 +379,7 @@ const SDWIS_STUBS: Record<ContaminantValue, SdwisRecord[]> = {
     {
       systemId: "IA2580091",
       systemName: "Des Moines Water Works",
-      sampleDate: "2023-12-01",
+      sampleDate: "2025-03-01",
       value: 4.2,
       unit: "mg/L",
       source: "Iowa DNR Source Water (stub)",
@@ -370,7 +389,7 @@ const SDWIS_STUBS: Record<ContaminantValue, SdwisRecord[]> = {
     {
       systemId: "IA2580091",
       systemName: "Des Moines Water Works",
-      sampleDate: "2024-01-01",
+      sampleDate: "2025-04-01",
       value: 4.8,
       unit: "mg/L",
       source: "Iowa DNR Source Water (stub)",
@@ -380,7 +399,7 @@ const SDWIS_STUBS: Record<ContaminantValue, SdwisRecord[]> = {
     {
       systemId: "IA2580091",
       systemName: "Des Moines Water Works",
-      sampleDate: "2024-02-01",
+      sampleDate: "2025-05-01",
       value: 5.5,
       unit: "mg/L",
       source: "Iowa DNR Source Water (stub)",
@@ -390,7 +409,7 @@ const SDWIS_STUBS: Record<ContaminantValue, SdwisRecord[]> = {
     {
       systemId: "IA2580091",
       systemName: "Des Moines Water Works",
-      sampleDate: "2024-03-01",
+      sampleDate: "2025-06-01",
       value: 6.2,
       unit: "mg/L",
       source: "Iowa DNR Source Water (stub)",
@@ -400,7 +419,7 @@ const SDWIS_STUBS: Record<ContaminantValue, SdwisRecord[]> = {
     {
       systemId: "IA2580091",
       systemName: "Des Moines Water Works",
-      sampleDate: "2024-04-01",
+      sampleDate: "2025-07-01",
       value: 6.7,
       unit: "mg/L",
       source: "Iowa DNR Source Water (stub)",
@@ -410,7 +429,7 @@ const SDWIS_STUBS: Record<ContaminantValue, SdwisRecord[]> = {
     {
       systemId: "IA2580091",
       systemName: "Des Moines Water Works",
-      sampleDate: "2024-05-01",
+      sampleDate: "2025-08-01",
       value: 7.1,
       unit: "mg/L",
       source: "Iowa DNR Source Water (stub)",
@@ -422,7 +441,7 @@ const SDWIS_STUBS: Record<ContaminantValue, SdwisRecord[]> = {
     {
       systemId: "IA3114560",
       systemName: "Cedar Rapids Water",
-      sampleDate: "2023-10-01",
+      sampleDate: "2025-04-01",
       value: 0.12,
       unit: "mg/L",
       source: "Iowa DNR Compliance (stub)",
@@ -432,7 +451,7 @@ const SDWIS_STUBS: Record<ContaminantValue, SdwisRecord[]> = {
     {
       systemId: "IA3114560",
       systemName: "Cedar Rapids Water",
-      sampleDate: "2023-12-01",
+      sampleDate: "2025-05-01",
       value: 0.16,
       unit: "mg/L",
       source: "Iowa DNR Compliance (stub)",
@@ -442,7 +461,7 @@ const SDWIS_STUBS: Record<ContaminantValue, SdwisRecord[]> = {
     {
       systemId: "IA3114560",
       systemName: "Cedar Rapids Water",
-      sampleDate: "2024-02-01",
+      sampleDate: "2025-06-01",
       value: 0.24,
       unit: "mg/L",
       source: "Iowa DNR Compliance (stub)",
@@ -452,7 +471,7 @@ const SDWIS_STUBS: Record<ContaminantValue, SdwisRecord[]> = {
     {
       systemId: "IA3114560",
       systemName: "Cedar Rapids Water",
-      sampleDate: "2024-04-01",
+      sampleDate: "2025-07-01",
       value: 0.32,
       unit: "mg/L",
       source: "Iowa DNR Compliance (stub)",
@@ -464,7 +483,7 @@ const SDWIS_STUBS: Record<ContaminantValue, SdwisRecord[]> = {
     {
       systemId: "IA5970011",
       systemName: "City of Marshalltown",
-      sampleDate: "2023-05-01",
+      sampleDate: "2025-02-01",
       value: 4.8,
       unit: "µg/L",
       source: "EPA SDWIS (stub)",
@@ -474,7 +493,7 @@ const SDWIS_STUBS: Record<ContaminantValue, SdwisRecord[]> = {
     {
       systemId: "IA5970011",
       systemName: "City of Marshalltown",
-      sampleDate: "2023-08-01",
+      sampleDate: "2025-03-01",
       value: 5.2,
       unit: "µg/L",
       source: "EPA SDWIS (stub)",
@@ -484,7 +503,7 @@ const SDWIS_STUBS: Record<ContaminantValue, SdwisRecord[]> = {
     {
       systemId: "IA5970011",
       systemName: "City of Marshalltown",
-      sampleDate: "2023-11-01",
+      sampleDate: "2025-04-01",
       value: 6.1,
       unit: "µg/L",
       source: "EPA SDWIS (stub)",
@@ -494,7 +513,7 @@ const SDWIS_STUBS: Record<ContaminantValue, SdwisRecord[]> = {
     {
       systemId: "IA5970011",
       systemName: "City of Marshalltown",
-      sampleDate: "2024-02-01",
+      sampleDate: "2025-05-01",
       value: 6.4,
       unit: "µg/L",
       source: "EPA SDWIS (stub)",
@@ -506,8 +525,8 @@ const SDWIS_STUBS: Record<ContaminantValue, SdwisRecord[]> = {
     {
       systemId: "IA2570970",
       systemName: "West Des Moines Water Works",
-      sampleDate: "2023-03-31",
-      value: 58.2,
+      sampleDate: "2025-03-31",
+      value: 58.6,
       unit: "µg/L",
       source: "Iowa HHS Compliance (stub)",
       metric: "Disinfection Byproducts (TTHM)",
@@ -516,8 +535,8 @@ const SDWIS_STUBS: Record<ContaminantValue, SdwisRecord[]> = {
     {
       systemId: "IA2570970",
       systemName: "West Des Moines Water Works",
-      sampleDate: "2023-06-30",
-      value: 61.7,
+      sampleDate: "2025-04-30",
+      value: 60.4,
       unit: "µg/L",
       source: "Iowa HHS Compliance (stub)",
       metric: "Disinfection Byproducts (TTHM)",
@@ -526,8 +545,8 @@ const SDWIS_STUBS: Record<ContaminantValue, SdwisRecord[]> = {
     {
       systemId: "IA2570970",
       systemName: "West Des Moines Water Works",
-      sampleDate: "2023-09-30",
-      value: 63.5,
+      sampleDate: "2025-05-31",
+      value: 62.9,
       unit: "µg/L",
       source: "Iowa HHS Compliance (stub)",
       metric: "Disinfection Byproducts (TTHM)",
@@ -536,8 +555,8 @@ const SDWIS_STUBS: Record<ContaminantValue, SdwisRecord[]> = {
     {
       systemId: "IA2570970",
       systemName: "West Des Moines Water Works",
-      sampleDate: "2023-12-31",
-      value: 64.8,
+      sampleDate: "2025-06-30",
+      value: 64.3,
       unit: "µg/L",
       source: "Iowa HHS Compliance (stub)",
       metric: "Disinfection Byproducts (TTHM)",
@@ -548,7 +567,7 @@ const SDWIS_STUBS: Record<ContaminantValue, SdwisRecord[]> = {
     {
       systemId: "IA8300487",
       systemName: "Sioux City Water",
-      sampleDate: "2023-09-30",
+      sampleDate: "2025-02-28",
       value: 0.76,
       unit: "mg/L",
       source: "Iowa HHS Oral Health (stub)",
@@ -558,7 +577,7 @@ const SDWIS_STUBS: Record<ContaminantValue, SdwisRecord[]> = {
     {
       systemId: "IA8300487",
       systemName: "Sioux City Water",
-      sampleDate: "2023-10-31",
+      sampleDate: "2025-03-31",
       value: 0.74,
       unit: "mg/L",
       source: "Iowa HHS Oral Health (stub)",
@@ -568,7 +587,7 @@ const SDWIS_STUBS: Record<ContaminantValue, SdwisRecord[]> = {
     {
       systemId: "IA8300487",
       systemName: "Sioux City Water",
-      sampleDate: "2023-11-30",
+      sampleDate: "2025-04-30",
       value: 0.71,
       unit: "mg/L",
       source: "Iowa HHS Oral Health (stub)",
@@ -578,7 +597,7 @@ const SDWIS_STUBS: Record<ContaminantValue, SdwisRecord[]> = {
     {
       systemId: "IA8300487",
       systemName: "Sioux City Water",
-      sampleDate: "2023-12-31",
+      sampleDate: "2025-05-31",
       value: 0.69,
       unit: "mg/L",
       source: "Iowa HHS Oral Health (stub)",
@@ -588,8 +607,8 @@ const SDWIS_STUBS: Record<ContaminantValue, SdwisRecord[]> = {
     {
       systemId: "IA8300487",
       systemName: "Sioux City Water",
-      sampleDate: "2024-01-31",
-      value: 0.72,
+      sampleDate: "2025-06-30",
+      value: 0.73,
       unit: "mg/L",
       source: "Iowa HHS Oral Health (stub)",
       metric: "Fluoride",
@@ -620,7 +639,11 @@ const SDWIS_STUBS: Record<ContaminantValue, SdwisRecord[]> = {
 
 async function fetchSdwisSeries(contaminant: ContaminantValue, query?: WaterSeriesQuery) {
   // TODO: upgrade to live SDWIS / HHS integrations. For now fall back to structured stub data.
-  waterLogger.warn("sdwis", `Live SDWIS integration for ${contaminant} not configured; using stub data.`)
+  const noticeKey = `sdwis-${contaminant}`
+  if (!remoteNotice.has(noticeKey)) {
+    waterLogger.warn("sdwis", `Live SDWIS integration for ${contaminant} not configured; using stub data.`)
+    remoteNotice.add(noticeKey)
+  }
 
   const dataset = SDWIS_STUBS[contaminant] ?? []
   if (!dataset.length) return null
@@ -677,7 +700,7 @@ const SENSOR_STUBS: Array<Omit<RealtimeNitrateSensor, "status"> & { status?: Wat
   {
     siteId: "USGS-05485500",
     name: "Raccoon River at Des Moines",
-    lastSample: "2024-05-21T11:00:00Z",
+    lastSample: "2025-07-18T11:00:00Z",
     value: 8.6,
     unit: "mg/L",
     source: "USGS NWIS (stub)",
@@ -686,7 +709,7 @@ const SENSOR_STUBS: Array<Omit<RealtimeNitrateSensor, "status"> & { status?: Wat
   {
     siteId: "USGS-05451700",
     name: "Cedar River at Cedar Rapids",
-    lastSample: "2024-05-21T10:30:00Z",
+    lastSample: "2025-07-18T10:30:00Z",
     value: 6.1,
     unit: "mg/L",
     source: "USGS NWIS (stub)",
@@ -695,7 +718,7 @@ const SENSOR_STUBS: Array<Omit<RealtimeNitrateSensor, "status"> & { status?: Wat
   {
     siteId: "IWQIS-1234",
     name: "Des Moines River near Saylorville",
-    lastSample: "2024-05-21T10:45:00Z",
+    lastSample: "2025-07-18T10:45:00Z",
     value: 5.2,
     unit: "mg/L",
     source: "IWQIS (stub)",
@@ -706,6 +729,17 @@ const SENSOR_STUBS: Array<Omit<RealtimeNitrateSensor, "status"> & { status?: Wat
 const nitrateThreshold = WATER_THRESHOLDS.nitrate
 
 export async function fetchRealtimeNitrateSensors(): Promise<RealtimeNitrateSensor[]> {
+  if (!ENABLE_REMOTE_SOURCES) {
+    if (!remoteNotice.has("iwqis")) {
+      waterLogger.info("iwqis", "Remote fetch disabled; using cached sensor fixtures.")
+      remoteNotice.add("iwqis")
+    }
+    return SENSOR_STUBS.map((sensor) => ({
+      ...sensor,
+      status: determinePointStatus(sensor.value, nitrateThreshold),
+    }))
+  }
+
   try {
     const payload = await fetchJson<unknown[]>(IWQIS_SENSOR_ENDPOINT)
     if (Array.isArray(payload) && payload.length) {

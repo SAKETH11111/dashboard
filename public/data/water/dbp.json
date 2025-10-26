@@ -3,29 +3,29 @@
   "metric": "Disinfection Byproducts (TTHM)",
   "unit": "µg/L",
   "source": "Iowa HHS Compliance (stub)",
-  "updatedAt": "2023-12-31T00:00:00Z",
+  "updatedAt": "2025-06-30T00:00:00Z",
   "region": "West Des Moines Water Works",
   "regionType": "system",
   "systemId": "IA2570970",
   "points": [
     {
-      "date": "2023-03-31",
-      "value": 58.2,
+      "date": "2025-03-31",
+      "value": 58.6,
       "status": "warn"
     },
     {
-      "date": "2023-06-30",
-      "value": 61.7,
+      "date": "2025-04-30",
+      "value": 60.4,
       "status": "warn"
     },
     {
-      "date": "2023-09-30",
-      "value": 63.5,
+      "date": "2025-05-31",
+      "value": 62.9,
       "status": "warn"
     },
     {
-      "date": "2023-12-31",
-      "value": 64.8,
+      "date": "2025-06-30",
+      "value": 64.3,
       "status": "warn"
     }
   ],

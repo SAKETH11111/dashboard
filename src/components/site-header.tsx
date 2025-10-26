@@ -12,8 +12,8 @@ function getTitleFromPath(pathname: string | null): string {
   if (!pathname) return "Home";
   if (pathname.startsWith("/dashboard") || pathname === "/") return "Dashboard";
   if (pathname.startsWith("/map")) return "Map";
-  if (pathname.startsWith("/news")) return "News";
   if (pathname.startsWith("/initiatives")) return "About";
+  if (pathname.startsWith("/about")) return "About";
   if (pathname.startsWith("/explorer")) return "Data Explorer";
 
   const parts = pathname.split("/").filter(Boolean);

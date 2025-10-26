@@ -287,7 +287,7 @@ export const HeroSection: React.FC = () => {
             transition={{ duration: 0.6, ease: "easeOut" }}
             className="max-w-2xl text-base text-white/70 sm:text-lg"
           >
-            Monitor water quality across Iowa's public water systems and
+            Monitor water quality across Iowa&rsquo;s public water systems and
             recreational sites. Track nitrate, nitrite, E. coli, PFAS, arsenic,
             DBPs, and fluoride levels with real-time advisories and health
             guidance.

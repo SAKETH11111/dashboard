@@ -3,33 +3,33 @@
   "metric": "Nitrite (as N)",
   "unit": "mg/L",
   "source": "Iowa DNR Compliance (stub)",
-  "updatedAt": "2024-04-15T12:00:00Z",
+  "updatedAt": "2025-07-15T12:00:00Z",
   "region": "Cedar Rapids Water",
   "regionType": "system",
   "systemId": "IA3114560",
   "points": [
     {
-      "date": "2023-10-01",
+      "date": "2025-04-01",
       "value": 0.12,
       "status": "safe"
     },
     {
-      "date": "2023-12-01",
+      "date": "2025-05-01",
       "value": 0.16,
       "status": "safe"
     },
     {
-      "date": "2024-02-01",
+      "date": "2025-06-01",
       "value": 0.24,
       "status": "safe"
     },
     {
-      "date": "2024-04-01",
+      "date": "2025-07-01",
       "value": 0.32,
       "status": "safe"
     }
   ],
-  "status": "warn",
+  "status": "safe",
   "threshold": {
     "contaminant": "nitrite",
     "unit": "mg/L",

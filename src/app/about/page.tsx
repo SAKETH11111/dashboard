@@ -1,10 +1,11 @@
+import type { CSSProperties } from "react";
+
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -15,7 +16,7 @@ import { Button } from "@/components/ui/button";
 export default function AboutPage() {
   const sidebarStyle = {
     "--header-height": "calc(var(--spacing) * 12)",
-  } as React.CSSProperties;
+  } as CSSProperties;
 
   return (
     <SidebarProvider style={sidebarStyle}>
@@ -31,7 +32,7 @@ export default function AboutPage() {
                 </h1>
                 <p className="max-w-2xl text-sm text-muted-foreground">
                   A comprehensive platform for monitoring water quality across
-                  Iowa's public water systems and recreational sites.
+                  Iowa&rsquo;s public water systems and recreational sites.
                 </p>
               </div>
             </header>
@@ -50,7 +51,7 @@ export default function AboutPage() {
                       The Iowa Water Quality Dashboard provides real-time
                       monitoring of water contaminants including nitrate,
                       nitrite, E. coli, PFAS, arsenic, disinfection byproducts,
-                      and fluoride across Iowa's public water systems and
+                      and fluoride across Iowa&rsquo;s public water systems and
                       recreational sites.
                     </p>
                     <div className="flex flex-wrap gap-2">

@@ -3,28 +3,28 @@
   "metric": "PFAS (PFOA + PFOS)",
   "unit": "ppt",
   "source": "Iowa DNR PFAS Survey (stub)",
-  "updatedAt": "2024-03-30T15:30:00Z",
+  "updatedAt": "2025-06-02T15:30:00Z",
   "region": "Quad Cities Davenport",
   "regionType": "system",
   "systemId": "IA5224026",
   "points": [
     {
-      "date": "2023-06-15",
+      "date": "2025-03-12",
       "value": 3.1,
       "status": "warn"
     },
     {
-      "date": "2023-09-18",
+      "date": "2025-04-09",
       "value": 3.6,
       "status": "warn"
     },
     {
-      "date": "2023-12-12",
+      "date": "2025-05-07",
       "value": 3.9,
       "status": "warn"
     },
     {
-      "date": "2024-03-25",
+      "date": "2025-06-01",
       "value": 4.3,
       "status": "alert"
     }
@@ -40,12 +40,12 @@
   },
   "advisories": [
     {
-      "id": "2024-pfas-davenport",
+      "id": "2025-pfas-davenport",
       "type": "pfas",
       "contaminant": "pfas",
       "title": "PFAS public notice",
       "summary": "Davenport Water reports PFOA + PFOS above the new 4 ppt MCL. Utility researching treatment upgrades.",
-      "issuedAt": "2024-04-10T18:00:00Z",
+      "issuedAt": "2025-06-10T18:00:00Z",
       "source": "Davenport Water Works",
       "sourceUrl": "https://www.cityofdavenportiowa.com/pfas",
       "affectedSystems": [

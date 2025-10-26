@@ -1,7 +1,7 @@
 "use client";
 
 import { useWaterAdvisories } from "@/hooks/use-water-series";
-import type { WaterAdvisory } from "@/types/water";
+import type { Advisory } from "@/types/water";
 import { AlertTriangle, ExternalLink, Calendar, MapPin } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -33,7 +33,7 @@ const SEVERITY_COLORS = {
   high: "bg-red-500/10 text-red-700 dark:text-red-300",
 };
 
-function AdvisoryCard({ advisory }: { advisory: WaterAdvisory }) {
+function AdvisoryCard({ advisory }: { advisory: Advisory }) {
   const advisoryColor = ADVISORY_COLORS[advisory.type] || ADVISORY_COLORS.boil;
   const severityColor = advisory.severity
     ? SEVERITY_COLORS[advisory.severity]
@@ -159,7 +159,11 @@ export function WaterAdvisories({
   showTitle = true,
   maxItems = 5,
 }: WaterAdvisoriesProps) {
-  const { data: series, isLoading, error } = useWaterAdvisories();
+  const {
+    data: advisories,
+    isLoading,
+    error,
+  } = useWaterAdvisories();
 
   if (isLoading) {
     return (
@@ -182,7 +186,7 @@ export function WaterAdvisories({
     );
   }
 
-  if (error || !series) {
+  if (error || !advisories) {
     return (
       <div className={cn("space-y-4", className)}>
         {showTitle && (
@@ -202,7 +206,6 @@ export function WaterAdvisories({
     );
   }
 
-  const advisories = series.advisories || [];
   const activeAdvisories = advisories
     .filter((advisory) => {
       const isExpired =

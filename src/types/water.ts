@@ -110,6 +110,13 @@ export const waterSeriesCollectionSchema = z.object({
 })
 export type WaterSeriesCollection = z.infer<typeof waterSeriesCollectionSchema>
 
+export type WaterSystemContaminant = {
+  id: Contaminant
+  systemId?: string
+  site?: string
+  label?: string
+}
+
 export type WaterSystem = {
   id: string
   name: string
@@ -120,5 +127,8 @@ export type WaterSystem = {
   }
   status: "safe" | "warn" | "alert"
   lastUpdated: string
-  contaminants: Contaminant[]
+  systemId?: string
+  source?: string
+  notes?: string
+  contaminants: WaterSystemContaminant[]
 }
