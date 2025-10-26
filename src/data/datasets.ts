@@ -16,15 +16,7 @@ export interface DatasetDefinition {
   endpoint: string
   downloadUrl?: string
   description: string
-  metricKey?:
-    | "nitrate"
-    | "nitrite"
-    | "ecoli"
-    | "pfas"
-    | "arsenic"
-    | "dbp"
-    | "fluoride"
-    | "advisories"
+  metricKey?: string
   status?: "available" | "coming-soon"
   category: DatasetCategory
   notes?: string

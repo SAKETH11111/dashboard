@@ -548,7 +548,10 @@ function getLatestPoint(series: WaterSeriesResponse) {
   return withValues ?? null
 }
 
-function deriveSystemStatus(fallback: WaterStatus, metrics: SystemMetric[]): WaterStatus {
+function deriveSystemStatus(
+  fallback: WaterSystem["status"],
+  metrics: SystemMetric[],
+): WaterSystem["status"] {
   if (metrics.some((metric) => metric.status === "alert")) return "alert"
   if (metrics.some((metric) => metric.status === "warn")) return "warn"
   if (metrics.some((metric) => metric.status === "safe")) return "safe"

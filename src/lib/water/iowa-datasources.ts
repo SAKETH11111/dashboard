@@ -22,6 +22,7 @@ import {
 } from "@/types/water"
 
 const WATER_DATA_DIR = path.join(process.cwd(), "public", "data", "water")
+const ADVISORIES_FALLBACK_FILE = path.join(WATER_DATA_DIR, "advisories.json")
 const REMOTE_TIMEOUT_MS = 20_000
 const ENABLE_REMOTE_SOURCES = process.env.WATER_ENABLE_REMOTE === "true"
 

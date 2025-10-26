@@ -24,16 +24,17 @@ type DatasetCardProps = {
 
 const frequencyColor: Record<DatasetDefinition["frequency"], string> = {
   Daily: "text-emerald-600 dark:text-emerald-300",
+  Weekly: "text-teal-600 dark:text-teal-300",
   Monthly: "text-sky-600 dark:text-sky-300",
+  Quarterly: "text-indigo-600 dark:text-indigo-300",
   Annual: "text-amber-600 dark:text-amber-300",
 }
 
 const domainColor: Record<DatasetDefinition["domain"], string> = {
-  Atmosphere: "bg-sky-100 text-sky-700 dark:bg-sky-500/10 dark:text-sky-200",
-  Cryosphere: "bg-indigo-100 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-200",
-  Ocean: "bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-200",
-  Energy: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-200",
-  Land: "bg-lime-100 text-lime-700 dark:bg-lime-500/10 dark:text-lime-200",
+  "Drinking Water": "bg-sky-100 text-sky-700 dark:bg-sky-500/10 dark:text-sky-200",
+  "Recreational Water": "bg-indigo-100 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-200",
+  "Emerging Contaminants": "bg-rose-100 text-rose-700 dark:bg-rose-500/10 dark:text-rose-200",
+  Infrastructure: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-200",
 }
 
 export function DatasetCard({

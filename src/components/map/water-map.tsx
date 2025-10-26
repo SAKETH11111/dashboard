@@ -7,10 +7,11 @@ import maplibregl, { Map as MapLibreMap, Marker, Popup } from "maplibre-gl"
 
 import type { WaterStatus, WaterSystem } from "@/types/water"
 
-const STATUS_COLORS: Record<WaterSystem["status"], string> = {
+const STATUS_COLORS: Record<WaterStatus, string> = {
   safe: "#10b981",
   warn: "#f59e0b",
   alert: "#ef4444",
+  unknown: "#6b7280",
 }
 
 const TYPE_COLORS: Record<WaterSystem["type"], string> = {

@@ -28,20 +28,23 @@ type CompareSheetProps = {
 }
 
 export function DatasetCompareSheet({ open, onOpenChange, datasets, onRemove }: CompareSheetProps) {
+  const supportedMetricKeys = useMemo(() => new Set(climateMetricConfigs.map((config) => config.key)), [])
   const supportedConfigs = useMemo(() => {
     const orderedConfigs: MetricConfig[] = []
     const seen = new Set<MetricConfig["key"]>()
     datasets.forEach((dataset) => {
       if (!dataset.metricKey) return
-      if (seen.has(dataset.metricKey as MetricConfig["key"])) return
-      const config = climateMetricConfigs.find((item) => item.key === dataset.metricKey)
+      if (!supportedMetricKeys.has(dataset.metricKey as MetricConfig["key"])) return
+      const metricKey = dataset.metricKey as MetricConfig["key"]
+      if (seen.has(metricKey)) return
+      const config = climateMetricConfigs.find((item) => item.key === metricKey)
       if (config) {
         orderedConfigs.push(config)
         seen.add(config.key)
       }
     })
     return orderedConfigs
-  }, [datasets])
+  }, [datasets, supportedMetricKeys])
 
   const [selectedMetric, setSelectedMetric] = useState<MetricConfig["key"]>(
     supportedConfigs[0]?.key ?? "co2"
@@ -122,7 +125,15 @@ export function DatasetCompareSheet({ open, onOpenChange, datasets, onRemove }: 
                 ))}
               </TabsList>
               {supportedConfigs.map((config) => {
-                const datasetForConfig = datasets.find((dataset) => dataset.metricKey === config.key) ?? null
+                const datasetForConfig =
+                  datasets.find(
+                    (
+                      dataset,
+                    ): dataset is DatasetDefinition & { metricKey: MetricConfig["key"] } =>
+                      Boolean(dataset.metricKey) &&
+                      supportedMetricKeys.has(dataset.metricKey as MetricConfig["key"]) &&
+                      (dataset.metricKey as MetricConfig["key"]) === config.key,
+                  ) ?? null
                 const smoothingLabelForConfig = getSmoothingLabel(config)
                 return (
                   <TabsContent key={config.key} value={config.key} className="mt-4 space-y-4">
